@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             version="3.0"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
+
+    <persistence-unit name="ticketsPU" transaction-type="JTA">
+        <!-- datasource настроим в WildFly, здесь только JNDI имя -->
+        <jta-data-source>java:/jboss/datasources/TicketsDS</jta-data-source>
+
+        <properties>
+            <!-- На реальном сервере ddl-auto лучше OFF, но для локальной отладки можно update -->
+            <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
+
+            <!-- Логи SQL (на время разработки) -->
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+        </properties>
+    </persistence-unit>
+
+</persistence>

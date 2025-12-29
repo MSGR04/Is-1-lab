@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8"/>
+    <title>Ticket IS</title>
+    <style>
+        :root{
+            --bg:#f4f6fa;
+            --card:#ffffff;
+            --text:#101828;
+            --muted:#667085;
+            --border:#e6eaf2;
+            --shadow:0 10px 30px rgba(16,24,40,.08);
+            --shadow2:0 4px 14px rgba(16,24,40,.08);
+            --radius:16px;
+            --radius2:12px;
+            --accent:#ffcc00; /* жёлтый "Яндекс-подобный" акцент */
+            --accent2:#111827;
+            --danger:#ef4444;
+            --ok:#22c55e;
+            --focus:0 0 0 3px rgba(255,204,0,.35);
+            --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+        }
+
+        *{ box-sizing:border-box; }
+        body{
+            margin:0;
+            font-family:var(--font);
+            color:var(--text);
+            background:var(--bg);
+        }
+
+        .app{
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 18px 16px 40px;
+        }
+
+        .topbar{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            background:var(--card);
+            border:1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow2);
+        }
+
+        .brand{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            font-weight:700;
+            letter-spacing:.2px;
+        }
+        .brand-badge{
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--accent);
+            display:grid;
+            place-items:center;
+            font-weight:900;
+        }
+
+        .nav{
+            display:flex;
+            gap:8px;
+            flex-wrap:wrap;
+            align-items:center;
+        }
+        .nav a{
+            text-decoration:none;
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 12px;
+            border:1px solid transparent;
+            background: transparent;
+        }
+        .nav a:hover{
+            background:#f8fafc;
+            border-color: var(--border);
+        }
+        .nav a.active{
+            background: #111827;
+            color:#fff;
+        }
+
+        .grid{
+            display:grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .card{
+            background:var(--card);
+            border:1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow2);
+            padding: 14px;
+        }
+
+        .card-title{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .card-title h1, .card-title h2{
+            font-size: 18px;
+            margin:0;
+            letter-spacing:.1px;
+        }
+        .hint{
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .row{
+            display:flex;
+            gap: 12px;
+            align-items:flex-end;
+            flex-wrap:wrap;
+        }
+
+        .field{
+            min-width: 180px;
+            display:flex;
+            flex-direction:column;
+            gap:6px;
+        }
+        .field label{
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        input, select, textarea{
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: #fff;
+            color: var(--text);
+            outline:none;
+        }
+        textarea{ min-height: 90px; resize: vertical; }
+        input:focus, select:focus, textarea:focus{
+            box-shadow: var(--focus);
+            border-color: rgba(255,204,0,.8);
+        }
+
+        .btn{
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 12px;
+            cursor:pointer;
+            transition: transform .02s ease, box-shadow .12s ease, background .12s ease;
+            user-select:none;
+        }
+        .btn:hover{ background:#f8fafc; }
+        .btn:active{ transform: translateY(1px); }
+        .btn.primary{
+            background: var(--accent);
+            border-color: rgba(0,0,0,.08);
+            color: #111827;
+            font-weight:700;
+        }
+        .btn.primary:hover{ filter: brightness(.98); }
+        .btn.dark{
+            background: #111827;
+            color:#fff;
+            border-color: #111827;
+        }
+        .btn.danger{
+            background: rgba(239,68,68,.08);
+            border-color: rgba(239,68,68,.25);
+            color: var(--danger);
+        }
+
+        .pager{
+            display:flex;
+            align-items:center;
+            gap: 10px;
+            flex-wrap:wrap;
+        }
+        .pill{
+            padding: 8px 10px;
+            border:1px solid var(--border);
+            background:#fff;
+            border-radius: 999px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        table{
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow:hidden;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+        }
+        thead th{
+            position: sticky;
+            top: 0;
+            background:#f8fafc;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--muted);
+            text-align:left;
+            padding: 10px 10px;
+            cursor:pointer;
+            user-select:none;
+            white-space:nowrap;
+        }
+        tbody td{
+            padding: 10px 10px;
+            border-bottom:1px solid var(--border);
+            font-size: 13px;
+            vertical-align: top;
+        }
+        tbody tr:nth-child(even){ background:#fcfdff; }
+        tbody tr:hover{ background:#f6f8ff; }
+
+        .actions{
+            display:flex;
+            gap: 8px;
+            flex-wrap:wrap;
+        }
+
+        pre#log{
+            margin: 0;
+            color: var(--danger);
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+
+        dialog{
+            border:none;
+            border-radius: 18px;
+            padding: 0;
+            width: min(720px, calc(100% - 24px));
+            box-shadow: var(--shadow);
+        }
+        dialog::backdrop{
+            background: rgba(16,24,40,.35);
+            backdrop-filter: blur(2px);
+        }
+        .dlg{
+            padding: 14px;
+        }
+        .dlg-head{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap: 12px;
+            padding: 14px 14px 10px;
+            border-bottom:1px solid var(--border);
+        }
+        .dlg-head h3{
+            margin:0;
+            font-size: 16px;
+        }
+        .dlg-body{
+            padding: 12px 14px 14px;
+        }
+        .dlg-foot{
+            padding: 12px 14px 14px;
+            border-top:1px solid var(--border);
+            display:flex;
+            justify-content:flex-end;
+            gap:10px;
+        }
+
+        .two{
+            display:grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        @media (max-width: 900px){
+            .two{ grid-template-columns: 1fr; }
+            .field{ min-width: 140px; }
+        }
+
+        .result{
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 14px;
+            border:1px dashed var(--border);
+            background:#fbfcff;
+        }
+        .result h4{
+            margin:0 0 8px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+        .mono{
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+
+</head>
+<body>
+
+<h1>Tickets</h1>
+
+<div class="app">
+    <div class="topbar">
+        <div class="brand">
+            <div class="brand-badge">T</div>
+            <div>
+                Ticket IS
+            </div>
+        </div>
+
+        <div class="nav">
+            <a class="active" href="./index.html">Tickets</a>
+            <a href="./venues.html">Venues</a>
+            <a href="./persons.html">Persons</a>
+            <a href="./events.html">Events</a>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <div class="card-title">
+                <h1>Tickets</h1>
+                <div class="row">
+                    <button class="btn primary" id="createBtn">Create ticket</button>
+                    <button class="btn dark" id="specialBtn">Special operations</button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="field">
+                    <label>Name (exact)</label>
+                    <input id="fName" placeholder="Exact ticket name">
+                </div>
+
+                <div class="field">
+                    <label>Type</label>
+                    <select id="fType">
+                        <option value="">any</option>
+                        <option>VIP</option>
+                        <option>USUAL</option>
+                        <option>BUDGETARY</option>
+                        <option>CHEAP</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Refundable</label>
+                    <select id="fRefundable">
+                        <option value="">any</option>
+                        <option value="true">true</option>
+                        <option value="false">false</option>
+                    </select>
+                </div>
+
+                <button class="btn" id="applyFiltersBtn">Apply</button>
+            </div>
+
+            <div class="row" style="justify-content: space-between; margin-top: 10px;">
+                <div class="pager">
+                    <button class="btn" id="prevBtn">Prev</button>
+                    <button class="btn" id="nextBtn">Next</button>
+                    <span class="pill" id="pageInfo"></span>
+                </div>
+
+                <div class="field" style="min-width:140px;">
+                    <label>Page size</label>
+                    <select id="pageSize">
+                        <option>5</option>
+                        <option selected>20</option>
+                        <option>50</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top: 12px;">
+                <table>
+                    <thead>
+                    <tr>
+                        <th data-sort="id">id</th>
+                        <th data-sort="name">name</th>
+                        <th>coords</th>
+                        <th data-sort="creationDate">creationDate</th>
+                        <th>personId</th>
+                        <th>eventId</th>
+                        <th>venueId</th>
+                        <th data-sort="price">price</th>
+                        <th>type</th>
+                        <th data-sort="discount">discount</th>
+                        <th data-sort="number">number</th>
+                        <th>refundable</th>
+                        <th>actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+
+            <div style="margin-top:10px;">
+                <pre id="log"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<dialog id="editDlg">
+    <div class="dlg">
+        <div class="dlg-head">
+            <h3 id="dlgTitle">Ticket</h3>
+            <button class="btn" onclick="document.getElementById('editDlg').close('cancel')">Close</button>
+        </div>
+
+        <form method="dialog" id="editForm">
+            <div class="dlg-body">
+                <input type="hidden" id="tId">
+
+                <div class="two">
+                    <div class="field"><label>Name</label><input id="tName" required></div>
+                    <div class="field"><label>Type</label>
+                        <select id="tType" required>
+                            <option>VIP</option><option>USUAL</option><option>BUDGETARY</option><option>CHEAP</option>
+                        </select>
+                    </div>
+
+                    <div class="field"><label>Coordinates.x (<=265)</label><input id="tX" type="number" max="265" required></div>
+                    <div class="field"><label>Coordinates.y</label><input id="tY" type="number" required></div>
+
+                    <div class="field"><label>personId</label><input id="tPersonId" type="number" min="1" placeholder="empty = null"></div>
+                    <div class="field"><label>eventId</label><input id="tEventId" type="number" min="1" required></div>
+
+                    <div class="field"><label>venueId (optional)</label><input id="tVenueId" type="number" min="1" placeholder="empty = null"></div>
+                    <div class="field"><label>price</label><input id="tPrice" type="number" min="0.000001" step="any" required></div>
+
+                    <div class="field"><label>discount (1..100)</label><input id="tDiscount" type="number" min="1" max="100" required></div>
+                    <div class="field"><label>number</label><input id="tNumber" type="number" min="1" required></div>
+
+                    <div class="field"><label>refundable</label>
+                        <select id="tRefundable" required>
+                            <option value="true">true</option>
+                            <option value="false">false</option>
+                        </select>
+                    </div>
+
+                    <div class="field" style="grid-column: 1 / -1;">
+                        <label>comment</label>
+                        <textarea id="tComment" required></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dlg-foot">
+                <button class="btn" value="cancel">Cancel</button>
+                <button class="btn primary" id="saveBtn" value="default">Save</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<dialog id="specialDlg">
+    <div class="dlg">
+        <div class="dlg-head">
+            <h3>Special operations</h3>
+            <button class="btn" onclick="document.getElementById('specialDlg').close('cancel')">Close</button>
+        </div>
+
+        <div class="dlg-body">
+            <div class="two">
+
+                <div class="card" style="box-shadow:none;">
+                    <div class="card-title" style="margin:0 0 8px;">
+                        <h2 style="font-size:14px;">1) Ticket with minimal venue</h2>
+                    </div>
+                    <button class="btn dark" id="spMinVenueBtn">Run</button>
+                </div>
+
+                <div class="card" style="box-shadow:none;">
+                    <div class="card-title" style="margin:0 0 8px;">
+                        <h2 style="font-size:14px;">2) Tickets where venue &lt; given venue</h2>
+                    </div>
+                    <div class="row">
+                        <div class="field" style="flex:1;">
+                            <label>venueId</label>
+                            <input id="spVenueId" type="number" min="1" placeholder="e.g. 10">
+                        </div>
+                        <button class="btn dark" id="spVenueLessBtn">Run</button>
+                    </div>
+                </div>
+
+                <div class="card" style="box-shadow:none;">
+                    <div class="card-title" style="margin:0 0 8px;">
+                        <h2 style="font-size:14px;">3) Unique numbers</h2>
+                    </div>
+                    <button class="btn dark" id="spUniqueNumbersBtn">Run</button>
+                </div>
+
+                <div class="card" style="box-shadow:none;">
+                    <div class="card-title" style="margin:0 0 8px;">
+                        <h2 style="font-size:14px;">4) Clone ticket: discount% and raise price by same amount</h2>
+                    </div>
+                    <div class="row">
+                        <div class="field" style="flex:1;">
+                            <label>ticketId</label>
+                            <input id="spCloneTicketId" type="number" min="1" placeholder="e.g. 5">
+                        </div>
+                        <div class="field" style="flex:1;">
+                            <label>percent (1..100)</label>
+                            <input id="spClonePercent" type="number" min="1" max="100" placeholder="e.g. 10">
+                        </div>
+                        <button class="btn dark" id="spCloneBtn">Run</button>
+                    </div>
+                </div>
+
+                <div class="card" style="box-shadow:none; grid-column: 1 / -1;">
+                    <div class="card-title" style="margin:0 0 8px;">
+                        <h2 style="font-size:14px;">5) Cancel person bookings (delete personId from tickets)</h2>
+                    </div>
+                    <div class="row">
+                        <div class="field" style="flex:1;">
+                            <label>personId</label>
+                            <input id="spCancelPersonId" type="number" min="1" placeholder="e.g. 3">
+                        </div>
+                        <button class="btn danger" id="spCancelBtn">Run</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="result">
+                <h4>Result</h4>
+                <div id="spResult" class="mono"></div>
+            </div>
+        </div>
+
+        <div class="dlg-foot">
+            <button class="btn" onclick="document.getElementById('spResult').textContent=''">Clear</button>
+            <button class="btn primary" onclick="document.getElementById('specialDlg').close('ok')">Done</button>
+        </div>
+    </div>
+</dialog>
+
+
+<script>
+    const APP_CTX = `${location.origin}/ticket-is`;
+    const API = `${APP_CTX}/api`;
+    function wsBase() {
+        const proto = location.protocol === "https:" ? "wss:" : "ws:";
+        return `${proto}//${location.host}/ticket-is`;
+    }
+    const log = (msg) => document.getElementById('log').textContent = msg;
+
+    const state = {
+        page: 0,
+        size: 20,
+        sort: 'id',
+        order: 'asc',
+        name: '',
+        type: '',
+        refundable: ''
+    };
+
+    function ctx() {
+        const p = location.pathname.split('/');
+        return p.length > 1 ? '/' + p[1] : '';
+    }
+
+    async function fetchTickets() {
+        const qs = new URLSearchParams();
+        qs.set('page', state.page);
+        qs.set('size', state.size);
+        qs.set('sort', state.sort);
+        qs.set('order', state.order);
+        if (state.name) qs.set('name', state.name);
+        if (state.type) qs.set('type', state.type);
+        if (state.refundable) qs.set('refundable', state.refundable);
+
+        const url = `${ctx()}/api/tickets?${qs.toString()}`;
+        const r = await fetch(url);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return await r.json();
+    }
+
+    function render(pageDto) {
+        const tb = document.getElementById('tbody');
+        tb.innerHTML = '';
+        for (const t of pageDto.items) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+        <td>${t.id}</td>
+        <td>${t.name}</td>
+        <td>${t.coordinates ? `${t.coordinates.x},${t.coordinates.y}` : ''}</td>
+        <td>${Array.isArray(t.creationDate) ? t.creationDate.join('-') : t.creationDate}</td>
+        <td>${t.personId}</td>
+        <td>${t.eventId}</td>
+        <td>${t.venueId ?? ''}</td>
+        <td>${t.price}</td>
+        <td>${t.type}</td>
+        <td>${t.discount}</td>
+        <td>${t.number}</td>
+        <td>${t.refundable}</td>
+        <td>
+            <div class="actions">
+                <button class="btn" data-act="edit" data-id="${t.id}">Edit</button>
+                <button class="btn danger" data-act="del" data-id="${t.id}">Delete</button>
+            </div>
+        </td>
+
+      `;
+            tb.appendChild(tr);
+        }
+
+        document.getElementById('pageInfo').textContent =
+            `page=${pageDto.page}, size=${pageDto.size}, total=${pageDto.total}`;
+    }
+
+    async function reload() {
+        try {
+            const data = await fetchTickets();
+            render(data);
+            log('');
+        } catch (e) {
+            log(String(e));
+        }
+    }
+
+    document.getElementById('applyFiltersBtn').onclick = () => {
+        state.name = document.getElementById('fName').value.trim();
+        state.type = document.getElementById('fType').value;
+        state.refundable = document.getElementById('fRefundable').value;
+        state.page = 0;
+        reload();
+    };
+
+    document.getElementById('prevBtn').onclick = () => {
+        if (state.page > 0) state.page--;
+        reload();
+    };
+    document.getElementById('nextBtn').onclick = () => {
+        state.page++;
+        reload();
+    };
+    document.getElementById('pageSize').onchange = (e) => {
+        state.size = parseInt(e.target.value, 10);
+        state.page = 0;
+        reload();
+    };
+
+    document.querySelectorAll('th[data-sort]').forEach(th => {
+        th.onclick = () => {
+            const s = th.getAttribute('data-sort');
+            if (state.sort === s) state.order = (state.order === 'asc' ? 'desc' : 'asc');
+            else { state.sort = s; state.order = 'asc'; }
+            reload();
+        };
+    });
+
+    document.getElementById('tbody').onclick = async (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const id = btn.getAttribute('data-id');
+        const act = btn.getAttribute('data-act');
+        if (act === 'del') {
+            if (!confirm(`Delete ticket ${id}?`)) return;
+            const r = await fetch(`${ctx()}/api/tickets/${id}`, { method: 'DELETE' });
+            if (!r.ok) alert(`delete failed: ${r.status}`);
+        }
+        if (act === 'edit') {
+            const r = await fetch(`${ctx()}/api/tickets/${id}`);
+            const t = await r.json();
+            openDialog(t);
+        }
+    };
+
+    const dlg = document.getElementById('editDlg');
+    function openDialog(t) {
+        document.getElementById('tId').value = t?.id ?? '';
+        document.getElementById('dlgTitle').textContent = t?.id ? `Edit ticket ${t.id}` : 'Create ticket';
+        document.getElementById('tName').value = t?.name ?? '';
+        document.getElementById('tX').value = t?.coordinates?.x ?? 0;
+        document.getElementById('tY').value = t?.coordinates?.y ?? 0;
+        document.getElementById('tPersonId').value = t?.personId ?? 1;
+        document.getElementById('tEventId').value = t?.eventId ?? 1;
+        document.getElementById('tVenueId').value = t?.venueId ?? '';
+        document.getElementById('tPrice').value = t?.price ?? 1;
+        document.getElementById('tType').value = t?.type ?? 'VIP';
+        document.getElementById('tDiscount').value = t?.discount ?? 1;
+        document.getElementById('tNumber').value = t?.number ?? 1;
+        document.getElementById('tComment').value = t?.comment ?? '';
+        document.getElementById('tRefundable').value = String(t?.refundable ?? false);
+        dlg.showModal();
+        function renderRelated(t){
+            const p = t?.person ? `Person: #${t.person.id}, passport=${t.person.passportID}, nat=${t.person.nationality}` : 'Person: —';
+            const e = t?.event ? `Event: #${t.event.id}, name=${t.event.name}, type=${t.event.eventType}` : 'Event: —';
+            const v = t?.venue ? `Venue: #${t.venue.id}, name=${t.venue.name}, type=${t.venue.type}` : 'Venue: null';
+            document.getElementById('relBox').textContent = `${p}\n${e}\n${v}`;
+        }
+        renderRelated(t)
+    }
+
+    document.getElementById('createBtn').onclick = () => openDialog(null);
+
+    document.getElementById('editForm').onsubmit = async () => {
+        const id = document.getElementById('tId').value.trim();
+        const body = {
+            name: document.getElementById('tName').value.trim(),
+            coordinates: {
+                x: parseInt(document.getElementById('tX').value, 10),
+                y: parseInt(document.getElementById('tY').value, 10)
+            },
+                personId: document.getElementById('tPersonId').value.trim()
+                    ? parseInt(document.getElementById('tPersonId').value, 10)
+                    : null,
+            eventId: parseInt(document.getElementById('tEventId').value, 10),
+            venueId: document.getElementById('tVenueId').value.trim() ? parseInt(document.getElementById('tVenueId').value, 10) : null,
+            price: parseFloat(document.getElementById('tPrice').value),
+            type: document.getElementById('tType').value,
+            discount: parseInt(document.getElementById('tDiscount').value, 10),
+            number: parseInt(document.getElementById('tNumber').value, 10),
+            comment: document.getElementById('tComment').value.trim(),
+            refundable: document.getElementById('tRefundable').value === 'true'
+        };
+
+        const url = id ? `${API}/tickets/${id}` : `${API}/tickets`;
+        console.log("POST/PUT url =", url);;
+        const method = id ? 'PUT' : 'POST';
+
+        console.log("PAGE ORIGIN =", location.origin);
+        console.log("PAGE PATH   =", location.pathname);
+        console.log("ctx()       =", ctx());
+        console.log("FETCH URL   =", url);
+
+        const r = await fetch(url, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+
+        if (!r.ok) {
+            const txt = await r.text();
+            alert(`save failed: ${r.status}\n${txt}`);
+            return;
+        }
+    };
+    let ws = null;
+    let wsTimer = null;
+
+    function wsUrl() {
+        const proto = location.protocol === "https:" ? "wss:" : "ws:";
+        return `${proto}//${location.host}${ctx()}/ws/tickets`; // важно: ctx()
+    }
+
+    function stopHeartbeat() {
+        if (wsTimer) clearInterval(wsTimer);
+        wsTimer = null;
+    }
+
+    function startHeartbeat() {
+        stopHeartbeat();
+        wsTimer = setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send("ping");
+            }
+        }, 25000);
+    }
+
+
+    function connectWs() {
+        const url = wsUrl();
+        ws = new WebSocket(url);
+
+        ws.onopen = () => {
+            console.log("ws open", url);
+            startHeartbeat();
+            reload();
+        };
+
+        let wsReloadTimer = null;
+
+        ws.onmessage = (e) => {
+            clearTimeout(wsReloadTimer);
+            wsReloadTimer = setTimeout(() => reload(), 150);
+        };
+
+        ws.onerror = (e) => {
+            console.log("ws error", e);
+        };
+
+        ws.onclose = (e) => {
+            console.log("ws close", e.code, e.reason);
+            stopHeartbeat();
+            setTimeout(connectWs, 1000);
+        };
+    }
+    // --- Special operations UI ---
+    const specialDlg = document.getElementById('specialDlg');
+    document.getElementById('specialBtn').onclick = () => {
+        document.getElementById('spResult').textContent = '';
+        specialDlg.showModal();
+    };
+
+    function showSpResult(obj) {
+        const el = document.getElementById('spResult');
+        if (typeof obj === 'string') el.textContent = obj;
+        else el.textContent = JSON.stringify(obj, null, 2);
+    }
+
+    async function spFetchJson(url, opts) {
+        const r = await fetch(url, opts);
+        const text = await r.text();
+        if (!r.ok) throw new Error(`HTTP ${r.status}\n${text}`);
+        try { return text ? JSON.parse(text) : null; } catch { return text; }
+    }
+
+    document.getElementById('spMinVenueBtn').onclick = async () => {
+        try {
+            const data = await spFetchJson(`${ctx()}/api/tickets/special/min-venue`);
+            showSpResult(data);
+        } catch (e) {
+            showSpResult(String(e));
+        }
+    };
+
+    document.getElementById('spVenueLessBtn').onclick = async () => {
+        try {
+            const venueId = parseInt(document.getElementById('spVenueId').value, 10);
+            if (!venueId || venueId <= 0) { showSpResult("venueId must be > 0"); return; }
+            const data = await spFetchJson(`${ctx()}/api/tickets/special/venue-less-than?venueId=${venueId}`);
+            showSpResult(data);
+        } catch (e) {
+            showSpResult(String(e));
+        }
+    };
+
+    document.getElementById('spUniqueNumbersBtn').onclick = async () => {
+        try {
+            const data = await spFetchJson(`${ctx()}/api/tickets/special/unique-numbers`);
+            showSpResult(data);
+        } catch (e) {
+            showSpResult(String(e));
+        }
+    };
+
+    document.getElementById('spCloneBtn').onclick = async () => {
+        try {
+            const ticketId = parseInt(document.getElementById('spCloneTicketId').value, 10);
+            const percent = parseInt(document.getElementById('spClonePercent').value, 10);
+            if (!ticketId || ticketId <= 0) { showSpResult("ticketId must be > 0"); return; }
+            if (!percent || percent < 1 || percent > 100) { showSpResult("percent must be in 1..100"); return; }
+
+            const data = await spFetchJson(
+                `${ctx()}/api/tickets/special/${ticketId}/clone-with-discount?percent=${percent}`,
+                { method: 'POST' }
+            );
+            showSpResult(data);
+
+            reload();
+        } catch (e) {
+            showSpResult(String(e));
+        }
+    };
+
+    document.getElementById('spCancelBtn').onclick = async () => {
+        try {
+            const personId = parseInt(document.getElementById('spCancelPersonId').value, 10);
+            if (!personId || personId <= 0) { showSpResult("personId must be > 0"); return; }
+
+            const data = await spFetchJson(
+                `${ctx()}/api/tickets/special/cancel-person-bookings?personId=${personId}`,
+                { method: 'POST' }
+            );
+            showSpResult({ cancelledTickets: data });
+
+            // после массового апдейта логично обновить таблицу
+            reload();
+        } catch (e) {
+            showSpResult(String(e));
+        }
+    };
+
+    reload();
+    connectWs();
+</script>
+</body>
+</html>
