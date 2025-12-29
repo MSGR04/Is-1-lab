@@ -21,7 +21,7 @@ public class TicketUpsertDto {
     @NotNull
     private Long eventId;
 
-    private Long venueId; // nullable
+    private Long venueId;
 
     @Positive
     private double price;

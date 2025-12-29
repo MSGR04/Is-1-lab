@@ -13,7 +13,7 @@ public class EventUpsertDto {
     private String name;
 
     @Positive
-    private Integer ticketsCount; // nullable допускается, просто не ставьте значение
+    private Integer ticketsCount;
 
     @NotNull
     private EventType eventType;

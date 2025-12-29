@@ -7,8 +7,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.*;
-import com.msgr.tickets.domain.entity.Person;
-import com.msgr.tickets.domain.entity.Venue;
 
 
 import java.util.ArrayList;

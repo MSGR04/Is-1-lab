@@ -1,7 +1,6 @@
 package com.msgr.tickets.network.ws;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.websocket.*;
 import jakarta.websocket.server.ServerEndpoint;
 

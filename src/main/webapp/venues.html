@@ -344,7 +344,6 @@
         const ty = document.getElementById('vTownY').value.trim();
         const tz = document.getElementById('vTownZ').value.trim();
 
-        // address: всегда объект (в сущности @NotNull), но поля внутри могут быть null
         const address = {
             zipCode: zip ? zip : null,
             town: (tx || ty || tz) ? {
@@ -394,12 +393,11 @@
         ws.onopen = () => console.log("ws venues open", url);
 
         ws.onmessage = () => {
-            // небольшой дебаунс, чтобы серия событий не дёргала API 100 раз
             clearTimeout(wsReloadTimer);
             wsReloadTimer = setTimeout(() => reload(), 120);
         };
 
-        ws.onerror = () => {}; // не спамим в консоль
+        ws.onerror = () => {};
         ws.onclose = () => setTimeout(connectWsVenues, 2000);
 
         return ws;

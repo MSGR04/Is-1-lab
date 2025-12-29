@@ -52,7 +52,7 @@ public class TicketSpecialResource {
         return service.cloneWithDiscountRaise(id, percent);
     }
 
-    // 5) Отменить бронирования person (удаляем tickets данного person)
+    // 5) Отменить бронирования person
     @POST
     @Path("/cancel-person-bookings")
     public long cancelPersonBookings(@QueryParam("personId") long personId) {

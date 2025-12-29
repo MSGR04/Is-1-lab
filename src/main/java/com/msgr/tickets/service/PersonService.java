@@ -8,7 +8,6 @@ import com.msgr.tickets.domain.entity.Person;
 import com.msgr.tickets.persistence.PersonRepository;
 import com.msgr.tickets.network.ws.TicketWsEndpoint;
 import com.msgr.tickets.network.ws.TicketWsMessage;
-import jakarta.ws.rs.BadRequestException;
 import com.msgr.tickets.persistence.TicketRepository;
 
 

@@ -15,7 +15,6 @@ public class TicketWsEndpoint {
 
     @OnMessage
     public void onMessage(Session session, String msg) {
-        // отвечаем на heartbeat
         if ("ping".equalsIgnoreCase(msg)) {
             session.getAsyncRemote().sendText("pong");
         }
