@@ -8,6 +8,8 @@ import com.msgr.tickets.network.dto.PageDto;
 import com.msgr.tickets.network.dto.VenueDto;
 import com.msgr.tickets.network.dto.VenueUpsertDto;
 import com.msgr.tickets.domain.entity.Venue;
+import com.msgr.tickets.domain.enums.VenueType;
+import com.msgr.tickets.network.mapper.VenueMapper;
 import com.msgr.tickets.persistence.TicketRepository;
 import com.msgr.tickets.persistence.VenueRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -25,36 +27,43 @@ public class VenueService {
 
     @Inject private TicketRepository ticketRepo;
 
+    @Inject
+    private VenueMapper mapper;
 
     public VenueDto get(long id) {
         Venue v = repo.findById(id).orElseThrow(() -> new NotFoundException("venue not found: " + id));
-        return toDto(v);
+        return mapper.toDto(v);
     }
 
-    public PageDto<VenueDto> list(int page, int size, String sort, String order) {
-        long total = repo.count();
-        List<VenueDto> items = repo.findPage(page, size, sort, order).stream().map(this::toDto).toList();
+    public PageDto<VenueDto> list(
+            int page, int size, String sort, String order,
+            Long id, String name, VenueType type, String zipCode, Integer capacity,
+            Float townX, Float townY, Float townZ
+    ) {
+        long total = repo.count(id, name, type, zipCode, capacity, townX, townY, townZ);
+        List<VenueDto> items = repo.findPage(page, size, sort, order, id, name, type, zipCode, capacity, townX, townY, townZ)
+                .stream().map(mapper::toDto).toList();
         return new PageDto<>(items, total, page, size);
     }
 
     @Transactional
     public VenueDto create(VenueUpsertDto in) {
         Venue v = new Venue();
-        applyUpsert(v, in);
+        mapper.applyUpsert(v, in);
         repo.save(v);
 
         VenueWsEndpoint.broadcast(new VenueWsMessage("CREATED", v.getId()));
-        return toDto(v);
+        return mapper.toDto(v);
     }
 
     @Transactional
     public VenueDto update(long id, VenueUpsertDto in) {
         Venue v = repo.findById(id).orElseThrow(() -> new NotFoundException("venue not found: " + id));
-        applyUpsert(v, in);
+        mapper.applyUpsert(v, in);
         v = repo.save(v);
 
         VenueWsEndpoint.broadcast(new VenueWsMessage("CREATED", v.getId()));
-        return toDto(v);
+        return mapper.toDto(v);
     }
 
     @Transactional
@@ -80,20 +89,4 @@ public class VenueService {
     }
 
 
-    private void applyUpsert(Venue v, VenueUpsertDto in) {
-        v.setName(in.getName());
-        v.setCapacity(in.getCapacity());
-        v.setType(in.getType());
-        v.setAddress(in.getAddress());
-    }
-
-    private VenueDto toDto(Venue v) {
-        VenueDto dto = new VenueDto();
-        dto.setId(v.getId());
-        dto.setName(v.getName());
-        dto.setCapacity(v.getCapacity());
-        dto.setType(v.getType());
-        dto.setAddress(v.getAddress());
-        return dto;
-    }
 }

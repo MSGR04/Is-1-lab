@@ -5,6 +5,9 @@ import com.msgr.tickets.network.dto.PageDto;
 import com.msgr.tickets.network.dto.PersonDto;
 import com.msgr.tickets.network.dto.PersonUpsertDto;
 import com.msgr.tickets.domain.entity.Person;
+import com.msgr.tickets.domain.enums.Color;
+import com.msgr.tickets.domain.enums.Country;
+import com.msgr.tickets.network.mapper.PersonMapper;
 import com.msgr.tickets.persistence.PersonRepository;
 import com.msgr.tickets.network.ws.TicketWsEndpoint;
 import com.msgr.tickets.network.ws.TicketWsMessage;
@@ -28,34 +31,43 @@ public class PersonService {
     @Inject
     private TicketRepository ticketRepo;
 
+    @Inject
+    private PersonMapper mapper;
 
     public PersonDto get(long id) {
         Person p = repo.findById(id).orElseThrow(() -> new NotFoundException("person not found: " + id));
-        return toDto(p);
+        return mapper.toDto(p);
     }
 
-    public PageDto<PersonDto> list(int page, int size, String sort, String order) {
-        long total = repo.count();
-        List<PersonDto> items = repo.findPage(page, size, sort, order).stream().map(this::toDto).toList();
+    public PageDto<PersonDto> list(
+            int page, int size, String sort, String order,
+            Long id, Color eyeColor, Color hairColor, String passportID, Country nationality,
+            Float locationX, Float locationY, Float locationZ
+    ) {
+        long total = repo.count(id, eyeColor, hairColor, passportID, nationality, locationX, locationY, locationZ);
+        List<PersonDto> items = repo.findPage(
+                page, size, sort, order,
+                id, eyeColor, hairColor, passportID, nationality, locationX, locationY, locationZ
+        ).stream().map(mapper::toDto).toList();
         return new PageDto<>(items, total, page, size);
     }
 
     @Transactional
     public PersonDto create(PersonUpsertDto in) {
         Person p = new Person();
-        applyUpsert(p, in);
+        mapper.applyUpsert(p, in);
         repo.save(p);
         PersonWsEndpoint.broadcast(new PersonWsMessage("CREATED", p.getId()));
-        return toDto(p);
+        return mapper.toDto(p);
     }
 
     @Transactional
     public PersonDto update(long id, PersonUpsertDto in) {
         Person p = repo.findById(id).orElseThrow(() -> new NotFoundException("person not found: " + id));
-        applyUpsert(p, in);
+        mapper.applyUpsert(p, in);
         p = repo.save(p);
         PersonWsEndpoint.broadcast(new PersonWsMessage("UPDATED", p.getId()));
-        return toDto(p);
+        return mapper.toDto(p);
     }
 
     @Transactional
@@ -81,22 +93,4 @@ public class PersonService {
 
 
 
-    private void applyUpsert(Person p, PersonUpsertDto in) {
-        p.setEyeColor(in.getEyeColor());
-        p.setHairColor(in.getHairColor());
-        p.setLocation(in.getLocation());
-        p.setPassportID(in.getPassportID());
-        p.setNationality(in.getNationality());
-    }
-
-    private PersonDto toDto(Person p) {
-        PersonDto dto = new PersonDto();
-        dto.setId(p.getId());
-        dto.setEyeColor(p.getEyeColor());
-        dto.setHairColor(p.getHairColor());
-        dto.setLocation(p.getLocation());
-        dto.setPassportID(p.getPassportID());
-        dto.setNationality(p.getNationality());
-        return dto;
-    }
 }

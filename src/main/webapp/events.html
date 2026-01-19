@@ -30,7 +30,16 @@
         .card-title{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
         .card-title h1{ font-size:18px; margin:0; }
         .row{ display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
-        .field{ min-width:180px; display:flex; flex-direction:column; gap:6px; }
+        .field{
+            min-width:180px;
+            display:flex;
+            flex-direction:column;
+            gap:6px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+        }
         .field label{ font-size:12px; color:var(--muted); }
         input, select, textarea{ width:100%; border:1px solid var(--border); border-radius:12px; padding:10px 12px; background:#fff; outline:none; }
         input:focus, select:focus, textarea:focus{ box-shadow:var(--focus); border-color: rgba(255,204,0,.8); }
@@ -87,16 +96,43 @@
     </div>
 
     <div class="grid">
-        <div class="card">
-            <div class="card-title">
-                <h1>Events</h1>
-                <button class="btn primary" id="createBtn">Create event</button>
-            </div>
+            <div class="card">
+                <div class="card-title">
+                    <h1>Events</h1>
+                    <button class="btn primary" id="createBtn">Create event</button>
+                </div>
 
-            <div class="row" style="justify-content: space-between; margin-bottom:10px;">
-                <div class="pager">
-                    <button class="btn" id="prevBtn">Prev</button>
-                    <button class="btn" id="nextBtn">Next</button>
+                <div class="row" style="margin-bottom:10px;">
+                    <div class="field">
+                        <label>Name (exact)</label>
+                        <input id="fName" placeholder="Exact name">
+                    </div>
+                    <div class="field">
+                        <label>id</label>
+                        <input id="fId" type="number" min="1" placeholder="Exact id">
+                    </div>
+                    <div class="field">
+                        <label>ticketsCount</label>
+                        <input id="fTicketsCount" type="number" min="1" placeholder="Exact ticketsCount">
+                    </div>
+                    <div class="field">
+                        <label>eventType (exact)</label>
+                        <select id="fType">
+                            <option value="">any</option>
+                            <option>E_SPORTS</option>
+                            <option>FOOTBALL</option>
+                            <option>BASEBALL</option>
+                            <option>EXPOSITION</option>
+                        </select>
+                    </div>
+                    <button class="btn" id="applyFiltersBtn">Apply filters</button>
+                    <button class="btn" id="clearFiltersBtn">Clear filters</button>
+                </div>
+
+                <div class="row" style="justify-content: space-between; margin-bottom:10px;">
+                    <div class="pager">
+                        <button class="btn" id="prevBtn">Prev</button>
+                        <button class="btn" id="nextBtn">Next</button>
                     <span class="pill" id="pageInfo"></span>
                 </div>
 
@@ -196,7 +232,7 @@
         return p.length > 1 ? '/' + p[1] : '';
     }
 
-    const state = { page: 0, size: 20, sort: 'id', order: 'asc' };
+    const state = { page: 0, size: 20, sort: 'id', order: 'asc', id: '', name: '', ticketsCount: '', eventType: '' };
     const log = (msg) => document.getElementById('log').textContent = msg;
 
     async function fetchPage() {
@@ -205,6 +241,10 @@
         qs.set('size', state.size);
         qs.set('sort', state.sort);
         qs.set('order', state.order);
+        if (state.id) qs.set('id', state.id);
+        if (state.name) qs.set('name', state.name);
+        if (state.ticketsCount) qs.set('ticketsCount', state.ticketsCount);
+        if (state.eventType) qs.set('eventType', state.eventType);
         const url = `${ctx()}/api/events?${qs.toString()}`;
         const r = await fetch(url);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -250,6 +290,26 @@
     document.getElementById('applyBtn').onclick = () => {
         state.sort = document.getElementById('sortSel').value;
         state.order = document.getElementById('orderSel').value;
+        state.page = 0;
+        reload();
+    };
+    document.getElementById('applyFiltersBtn').onclick = () => {
+        state.id = document.getElementById('fId').value.trim();
+        state.name = document.getElementById('fName').value.trim();
+        state.ticketsCount = document.getElementById('fTicketsCount').value.trim();
+        state.eventType = document.getElementById('fType').value;
+        state.page = 0;
+        reload();
+    };
+    document.getElementById('clearFiltersBtn').onclick = () => {
+        document.getElementById('fId').value = '';
+        document.getElementById('fName').value = '';
+        document.getElementById('fTicketsCount').value = '';
+        document.getElementById('fType').value = '';
+        state.id = '';
+        state.name = '';
+        state.ticketsCount = '';
+        state.eventType = '';
         state.page = 0;
         reload();
     };

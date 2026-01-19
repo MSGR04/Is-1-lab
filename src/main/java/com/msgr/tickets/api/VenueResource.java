@@ -4,6 +4,7 @@ import com.msgr.tickets.network.dto.PageDto;
 import com.msgr.tickets.network.dto.VenueDto;
 import com.msgr.tickets.network.dto.VenueUpsertDto;
 import com.msgr.tickets.service.VenueService;
+import com.msgr.tickets.domain.enums.VenueType;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -28,12 +29,20 @@ public class VenueResource {
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("20") int size,
             @QueryParam("sort") @DefaultValue("id") String sort,
-            @QueryParam("order") @DefaultValue("asc") String order
+            @QueryParam("order") @DefaultValue("asc") String order,
+            @QueryParam("id") Long id,
+            @QueryParam("name") String name,
+            @QueryParam("type") VenueType type,
+            @QueryParam("zipCode") String zipCode,
+            @QueryParam("capacity") Integer capacity,
+            @QueryParam("townX") Float townX,
+            @QueryParam("townY") Float townY,
+            @QueryParam("townZ") Float townZ
     ) {
         if (page < 0) page = 0;
         if (size < 1) size = 1;
         if (size > 200) size = 200;
-        return service.list(page, size, sort, order);
+        return service.list(page, size, sort, order, id, name, type, zipCode, capacity, townX, townY, townZ);
     }
 
     @GET

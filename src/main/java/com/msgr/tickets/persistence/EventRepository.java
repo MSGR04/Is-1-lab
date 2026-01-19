@@ -1,6 +1,7 @@
 package com.msgr.tickets.persistence;
 
 import com.msgr.tickets.domain.entity.Event;
+import com.msgr.tickets.domain.enums.EventType;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -36,19 +37,31 @@ public class EventRepository {
         em.remove(managed);
     }
 
-    public long count() {
+    public long count(Long id, String name, Integer ticketsCount, EventType eventType) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Long> cq = cb.createQuery(Long.class);
         Root<Event> root = cq.from(Event.class);
         cq.select(cb.count(root));
+        java.util.List<jakarta.persistence.criteria.Predicate> predicates = new java.util.ArrayList<>();
+        if (id != null) predicates.add(cb.equal(root.get("id"), id));
+        if (name != null && !name.isBlank()) predicates.add(cb.equal(root.get("name"), name));
+        if (ticketsCount != null) predicates.add(cb.equal(root.get("ticketsCount"), ticketsCount));
+        if (eventType != null) predicates.add(cb.equal(root.get("eventType"), eventType));
+        if (!predicates.isEmpty()) cq.where(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         return em.createQuery(cq).getSingleResult();
     }
 
-    public List<Event> findPage(int page, int size, String sort, String order) {
+    public List<Event> findPage(int page, int size, String sort, String order, Long id, String name, Integer ticketsCount, EventType eventType) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Event> cq = cb.createQuery(Event.class);
         Root<Event> root = cq.from(Event.class);
         cq.select(root);
+        java.util.List<jakarta.persistence.criteria.Predicate> predicates = new java.util.ArrayList<>();
+        if (id != null) predicates.add(cb.equal(root.get("id"), id));
+        if (name != null && !name.isBlank()) predicates.add(cb.equal(root.get("name"), name));
+        if (ticketsCount != null) predicates.add(cb.equal(root.get("ticketsCount"), ticketsCount));
+        if (eventType != null) predicates.add(cb.equal(root.get("eventType"), eventType));
+        if (!predicates.isEmpty()) cq.where(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
 
         Path<?> sortPath = switch (sort == null ? "id" : sort) {
             case "id" -> root.get("id");

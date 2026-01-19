@@ -44,10 +44,19 @@ public class TicketService {
     public PageDto<TicketDto> list(
             int page, int size,
             String sort, String order,
-            String name, Double priceMin, Double priceMax, TicketType type, Boolean refundable
+            Long id, String name, String comment, Integer coordinatesX, Long coordinatesY, String creationDate,
+            Long personId, Long eventId, Long venueId,
+            Double priceMin, Double priceMax, Double price, TicketType type, Long discount, Long number, Boolean refundable
     ) {
-        long total = repo.count(name, priceMin, priceMax, type, refundable);
-        List<TicketDto> items = repo.findPage(page, size, sort, order, name, priceMin, priceMax, type, refundable)
+        long total = repo.count(
+                id, name, comment, coordinatesX, coordinatesY, creationDate,
+                personId, eventId, venueId, priceMin, priceMax, price, type, discount, number, refundable
+        );
+        List<TicketDto> items = repo.findPage(
+                page, size, sort, order,
+                id, name, comment, coordinatesX, coordinatesY, creationDate,
+                personId, eventId, venueId, priceMin, priceMax, price, type, discount, number, refundable
+        )
                 .stream().map(this::toDto).toList();
         return new PageDto<>(items, total, page, size);
     }

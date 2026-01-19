@@ -4,6 +4,8 @@ import com.msgr.tickets.network.dto.PageDto;
 import com.msgr.tickets.network.dto.PersonDto;
 import com.msgr.tickets.network.dto.PersonUpsertDto;
 import com.msgr.tickets.service.PersonService;
+import com.msgr.tickets.domain.enums.Color;
+import com.msgr.tickets.domain.enums.Country;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -28,12 +30,20 @@ public class PersonResource {
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("20") int size,
             @QueryParam("sort") @DefaultValue("id") String sort,
-            @QueryParam("order") @DefaultValue("asc") String order
+            @QueryParam("order") @DefaultValue("asc") String order,
+            @QueryParam("id") Long id,
+            @QueryParam("eyeColor") Color eyeColor,
+            @QueryParam("hairColor") Color hairColor,
+            @QueryParam("passportID") String passportID,
+            @QueryParam("nationality") Country nationality,
+            @QueryParam("locationX") Float locationX,
+            @QueryParam("locationY") Float locationY,
+            @QueryParam("locationZ") Float locationZ
     ) {
         if (page < 0) page = 0;
         if (size < 1) size = 1;
         if (size > 200) size = 200;
-        return service.list(page, size, sort, order);
+        return service.list(page, size, sort, order, id, eyeColor, hairColor, passportID, nationality, locationX, locationY, locationZ);
     }
 
     @GET

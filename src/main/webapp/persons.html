@@ -30,7 +30,16 @@
         .card-title{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
         .card-title h1{ font-size:18px; margin:0; }
         .row{ display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
-        .field{ min-width:180px; display:flex; flex-direction:column; gap:6px; }
+        .field{
+            min-width:180px;
+            display:flex;
+            flex-direction:column;
+            gap:6px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+        }
         .field label{ font-size:12px; color:var(--muted); }
         input, select, textarea{ width:100%; border:1px solid var(--border); border-radius:12px; padding:10px 12px; background:#fff; outline:none; }
         input:focus, select:focus, textarea:focus{ box-shadow:var(--focus); border-color: rgba(255,204,0,.8); }
@@ -87,16 +96,62 @@
     </div>
 
     <div class="grid">
-        <div class="card">
-            <div class="card-title">
-                <h1>Persons</h1>
-                <button class="btn primary" id="createBtn">Create person</button>
-            </div>
+            <div class="card">
+                <div class="card-title">
+                    <h1>Persons</h1>
+                    <button class="btn primary" id="createBtn">Create person</button>
+                </div>
 
-            <div class="row" style="justify-content: space-between; margin-bottom:10px;">
-                <div class="pager">
-                    <button class="btn" id="prevBtn">Prev</button>
-                    <button class="btn" id="nextBtn">Next</button>
+                <div class="row" style="margin-bottom:10px;">
+                    <div class="field">
+                        <label>passportID (exact)</label>
+                        <input id="fPassport" placeholder="Exact passportID">
+                    </div>
+                    <div class="field">
+                        <label>id</label>
+                        <input id="fId" type="number" min="1" placeholder="Exact id">
+                    </div>
+                    <div class="field">
+                        <label>eyeColor (exact)</label>
+                        <select id="fEye">
+                            <option value="">any</option>
+                            <option>RED</option><option>YELLOW</option><option>ORANGE</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>hairColor (exact)</label>
+                        <select id="fHair">
+                            <option value="">any</option>
+                            <option>RED</option><option>YELLOW</option><option>ORANGE</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>nationality (exact)</label>
+                        <select id="fNat">
+                            <option value="">any</option>
+                            <option>GERMANY</option><option>SPAIN</option><option>INDIA</option><option>ITALY</option><option>JAPAN</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>location.x</label>
+                        <input id="fLocX" type="number" step="0.01" placeholder="Exact x">
+                    </div>
+                    <div class="field">
+                        <label>location.y</label>
+                        <input id="fLocY" type="number" step="0.01" placeholder="Exact y">
+                    </div>
+                    <div class="field">
+                        <label>location.z</label>
+                        <input id="fLocZ" type="number" step="0.01" placeholder="Exact z">
+                    </div>
+                    <button class="btn" id="applyFiltersBtn">Apply filters</button>
+                    <button class="btn" id="clearFiltersBtn">Clear filters</button>
+                </div>
+
+                <div class="row" style="justify-content: space-between; margin-bottom:10px;">
+                    <div class="pager">
+                        <button class="btn" id="prevBtn">Prev</button>
+                        <button class="btn" id="nextBtn">Next</button>
                     <span class="pill" id="pageInfo"></span>
                 </div>
 
@@ -107,6 +162,11 @@
                             <option value="id">id</option>
                             <option value="passportID">passportID</option>
                             <option value="nationality">nationality</option>
+                            <option value="eyeColor">eyeColor</option>
+                            <option value="hairColor">hairColor</option>
+                            <option value="locationX">locationX</option>
+                            <option value="locationY">locationY</option>
+                            <option value="locationZ">locationZ</option>
                         </select>
                     </div>
                     <div class="field" style="min-width:160px;">
@@ -134,7 +194,7 @@
                     <th data-sort="id">id</th>
                     <th>eyeColor</th>
                     <th>hairColor</th>
-                    <th>location (x,y,z)</th>
+                    <th data-sort="locationX">location (x,y,z)</th>
                     <th data-sort="passportID">passportID</th>
                     <th data-sort="nationality">nationality</th>
                     <th>actions</th>
@@ -216,7 +276,7 @@
         return p.length > 1 ? '/' + p[1] : '';
     }
 
-    const state = { page: 0, size: 20, sort: 'id', order: 'asc' };
+    const state = { page: 0, size: 20, sort: 'id', order: 'asc', id: '', passportID: '', eyeColor: '', hairColor: '', nationality: '', locationX: '', locationY: '', locationZ: '' };
     const log = (msg) => document.getElementById('log').textContent = msg;
 
     async function fetchPage() {
@@ -225,6 +285,14 @@
         qs.set('size', state.size);
         qs.set('sort', state.sort);
         qs.set('order', state.order);
+        if (state.id) qs.set('id', state.id);
+        if (state.passportID) qs.set('passportID', state.passportID);
+        if (state.eyeColor) qs.set('eyeColor', state.eyeColor);
+        if (state.hairColor) qs.set('hairColor', state.hairColor);
+        if (state.nationality) qs.set('nationality', state.nationality);
+        if (state.locationX) qs.set('locationX', state.locationX);
+        if (state.locationY) qs.set('locationY', state.locationY);
+        if (state.locationZ) qs.set('locationZ', state.locationZ);
         const url = `${ctx()}/api/persons?${qs.toString()}`;
         const r = await fetch(url);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -273,6 +341,38 @@
     document.getElementById('applyBtn').onclick = () => {
         state.sort = document.getElementById('sortSel').value;
         state.order = document.getElementById('orderSel').value;
+        state.page = 0;
+        reload();
+    };
+    document.getElementById('applyFiltersBtn').onclick = () => {
+        state.id = document.getElementById('fId').value.trim();
+        state.passportID = document.getElementById('fPassport').value.trim();
+        state.eyeColor = document.getElementById('fEye').value;
+        state.hairColor = document.getElementById('fHair').value;
+        state.nationality = document.getElementById('fNat').value;
+        state.locationX = document.getElementById('fLocX').value.trim();
+        state.locationY = document.getElementById('fLocY').value.trim();
+        state.locationZ = document.getElementById('fLocZ').value.trim();
+        state.page = 0;
+        reload();
+    };
+    document.getElementById('clearFiltersBtn').onclick = () => {
+        document.getElementById('fId').value = '';
+        document.getElementById('fPassport').value = '';
+        document.getElementById('fEye').value = '';
+        document.getElementById('fHair').value = '';
+        document.getElementById('fNat').value = '';
+        document.getElementById('fLocX').value = '';
+        document.getElementById('fLocY').value = '';
+        document.getElementById('fLocZ').value = '';
+        state.id = '';
+        state.passportID = '';
+        state.eyeColor = '';
+        state.hairColor = '';
+        state.nationality = '';
+        state.locationX = '';
+        state.locationY = '';
+        state.locationZ = '';
         state.page = 0;
         reload();
     };

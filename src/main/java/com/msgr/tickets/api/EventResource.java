@@ -4,6 +4,7 @@ import com.msgr.tickets.network.dto.EventDto;
 import com.msgr.tickets.network.dto.EventUpsertDto;
 import com.msgr.tickets.network.dto.PageDto;
 import com.msgr.tickets.service.EventService;
+import com.msgr.tickets.domain.enums.EventType;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -28,12 +29,16 @@ public class EventResource {
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("20") int size,
             @QueryParam("sort") @DefaultValue("id") String sort,
-            @QueryParam("order") @DefaultValue("asc") String order
+            @QueryParam("order") @DefaultValue("asc") String order,
+            @QueryParam("id") Long id,
+            @QueryParam("name") String name,
+            @QueryParam("ticketsCount") Integer ticketsCount,
+            @QueryParam("eventType") EventType eventType
     ) {
         if (page < 0) page = 0;
         if (size < 1) size = 1;
         if (size > 200) size = 200;
-        return service.list(page, size, sort, order);
+        return service.list(page, size, sort, order, id, name, ticketsCount, eventType);
     }
 
     @GET

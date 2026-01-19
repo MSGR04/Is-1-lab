@@ -14,7 +14,7 @@
             --shadow2:0 4px 14px rgba(16,24,40,.08);
             --radius:16px;
             --radius2:12px;
-            --accent:#ffcc00; /* жёлтый "Яндекс-подобный" акцент */
+            --accent:#ffcc00;
             --accent2:#111827;
             --danger:#ef4444;
             --ok:#22c55e;
@@ -132,6 +132,10 @@
             display:flex;
             flex-direction:column;
             gap:6px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
         }
         .field label{
             font-size: 12px;
@@ -346,6 +350,61 @@
                 </div>
 
                 <div class="field">
+                    <label>Comment (exact)</label>
+                    <input id="fComment" placeholder="Exact comment">
+                </div>
+
+                <div class="field">
+                    <label>id</label>
+                    <input id="fId" type="number" min="1" placeholder="Exact id">
+                </div>
+
+                <div class="field">
+                    <label>coordinates.x</label>
+                    <input id="fX" type="number" placeholder="Exact x">
+                </div>
+
+                <div class="field">
+                    <label>coordinates.y</label>
+                    <input id="fY" type="number" placeholder="Exact y">
+                </div>
+
+                <div class="field">
+                    <label>creationDate (YYYY-MM-DD)</label>
+                    <input id="fCreationDate" placeholder="2026-01-19">
+                </div>
+
+                <div class="field">
+                    <label>personId</label>
+                    <input id="fPersonId" type="number" min="1" placeholder="Exact personId">
+                </div>
+
+                <div class="field">
+                    <label>eventId</label>
+                    <input id="fEventId" type="number" min="1" placeholder="Exact eventId">
+                </div>
+
+                <div class="field">
+                    <label>venueId</label>
+                    <input id="fVenueId" type="number" min="1" placeholder="Exact venueId">
+                </div>
+
+                <div class="field">
+                    <label>price (exact)</label>
+                    <input id="fPrice" type="number" step="any" placeholder="Exact price">
+                </div>
+
+                <div class="field">
+                    <label>discount (exact)</label>
+                    <input id="fDiscount" type="number" min="1" max="100" placeholder="Exact discount">
+                </div>
+
+                <div class="field">
+                    <label>number (exact)</label>
+                    <input id="fNumber" type="number" min="1" placeholder="Exact number">
+                </div>
+
+                <div class="field">
                     <label>Type</label>
                     <select id="fType">
                         <option value="">any</option>
@@ -366,6 +425,7 @@
                 </div>
 
                 <button class="btn" id="applyFiltersBtn">Apply</button>
+                <button class="btn" id="clearFiltersBtn">Clear filters</button>
             </div>
 
             <div class="row" style="justify-content: space-between; margin-top: 10px;">
@@ -391,16 +451,17 @@
                     <tr>
                         <th data-sort="id">id</th>
                         <th data-sort="name">name</th>
-                        <th>coords</th>
+                        <th data-sort="coordinatesX">coords</th>
                         <th data-sort="creationDate">creationDate</th>
-                        <th>personId</th>
-                        <th>eventId</th>
-                        <th>venueId</th>
+                        <th data-sort="personId">personId</th>
+                        <th data-sort="eventId">eventId</th>
+                        <th data-sort="venueId">venueId</th>
                         <th data-sort="price">price</th>
-                        <th>type</th>
+                        <th data-sort="type">type</th>
                         <th data-sort="discount">discount</th>
                         <th data-sort="number">number</th>
-                        <th>refundable</th>
+                        <th data-sort="comment">comment</th>
+                        <th data-sort="refundable">refundable</th>
                         <th>actions</th>
                     </tr>
                     </thead>
@@ -566,6 +627,17 @@
         sort: 'id',
         order: 'asc',
         name: '',
+        comment: '',
+        id: '',
+        coordinatesX: '',
+        coordinatesY: '',
+        creationDate: '',
+        personId: '',
+        eventId: '',
+        venueId: '',
+        price: '',
+        discount: '',
+        number: '',
         type: '',
         refundable: ''
     };
@@ -581,7 +653,18 @@
         qs.set('size', state.size);
         qs.set('sort', state.sort);
         qs.set('order', state.order);
+        if (state.id) qs.set('id', state.id);
         if (state.name) qs.set('name', state.name);
+        if (state.comment) qs.set('comment', state.comment);
+        if (state.coordinatesX) qs.set('coordinatesX', state.coordinatesX);
+        if (state.coordinatesY) qs.set('coordinatesY', state.coordinatesY);
+        if (state.creationDate) qs.set('creationDate', state.creationDate);
+        if (state.personId) qs.set('personId', state.personId);
+        if (state.eventId) qs.set('eventId', state.eventId);
+        if (state.venueId) qs.set('venueId', state.venueId);
+        if (state.price) qs.set('price', state.price);
+        if (state.discount) qs.set('discount', state.discount);
+        if (state.number) qs.set('number', state.number);
         if (state.type) qs.set('type', state.type);
         if (state.refundable) qs.set('refundable', state.refundable);
 
@@ -608,6 +691,7 @@
         <td>${t.type}</td>
         <td>${t.discount}</td>
         <td>${t.number}</td>
+        <td>${t.comment}</td>
         <td>${t.refundable}</td>
         <td>
             <div class="actions">
@@ -635,9 +719,52 @@
     }
 
     document.getElementById('applyFiltersBtn').onclick = () => {
+        state.id = document.getElementById('fId').value.trim();
         state.name = document.getElementById('fName').value.trim();
+        state.comment = document.getElementById('fComment').value.trim();
+        state.coordinatesX = document.getElementById('fX').value.trim();
+        state.coordinatesY = document.getElementById('fY').value.trim();
+        state.creationDate = document.getElementById('fCreationDate').value.trim();
+        state.personId = document.getElementById('fPersonId').value.trim();
+        state.eventId = document.getElementById('fEventId').value.trim();
+        state.venueId = document.getElementById('fVenueId').value.trim();
+        state.price = document.getElementById('fPrice').value.trim();
+        state.discount = document.getElementById('fDiscount').value.trim();
+        state.number = document.getElementById('fNumber').value.trim();
         state.type = document.getElementById('fType').value;
         state.refundable = document.getElementById('fRefundable').value;
+        state.page = 0;
+        reload();
+    };
+    document.getElementById('clearFiltersBtn').onclick = () => {
+        document.getElementById('fId').value = '';
+        document.getElementById('fName').value = '';
+        document.getElementById('fComment').value = '';
+        document.getElementById('fX').value = '';
+        document.getElementById('fY').value = '';
+        document.getElementById('fCreationDate').value = '';
+        document.getElementById('fPersonId').value = '';
+        document.getElementById('fEventId').value = '';
+        document.getElementById('fVenueId').value = '';
+        document.getElementById('fPrice').value = '';
+        document.getElementById('fDiscount').value = '';
+        document.getElementById('fNumber').value = '';
+        document.getElementById('fType').value = '';
+        document.getElementById('fRefundable').value = '';
+        state.id = '';
+        state.name = '';
+        state.comment = '';
+        state.coordinatesX = '';
+        state.coordinatesY = '';
+        state.creationDate = '';
+        state.personId = '';
+        state.eventId = '';
+        state.venueId = '';
+        state.price = '';
+        state.discount = '';
+        state.number = '';
+        state.type = '';
+        state.refundable = '';
         state.page = 0;
         reload();
     };
@@ -809,10 +936,79 @@
         specialDlg.showModal();
     };
 
+    function esc(v) {
+        return String(v ?? '').replace(/[&<>"]/g, (c) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'
+        }[c]));
+    }
+
+    function renderTicketsTable(items) {
+        const rows = (items || []).map(t => `
+            <tr>
+                <td>${esc(t.id)}</td>
+                <td>${esc(t.name)}</td>
+                <td>${esc(t.coordinates ? `${t.coordinates.x},${t.coordinates.y}` : '')}</td>
+                <td>${esc(Array.isArray(t.creationDate) ? t.creationDate.join('-') : t.creationDate)}</td>
+                <td>${esc(t.personId)}</td>
+                <td>${esc(t.eventId)}</td>
+                <td>${esc(t.venueId ?? '')}</td>
+                <td>${esc(t.price)}</td>
+                <td>${esc(t.type)}</td>
+                <td>${esc(t.discount)}</td>
+                <td>${esc(t.number)}</td>
+                <td>${esc(t.comment)}</td>
+                <td>${esc(t.refundable)}</td>
+            </tr>
+        `).join('');
+
+        return `
+            <table>
+                <thead>
+                <tr>
+                    <th>id</th>
+                    <th>name</th>
+                    <th>coords</th>
+                    <th>creationDate</th>
+                    <th>personId</th>
+                    <th>eventId</th>
+                    <th>venueId</th>
+                    <th>price</th>
+                    <th>type</th>
+                    <th>discount</th>
+                    <th>number</th>
+                    <th>comment</th>
+                    <th>refundable</th>
+                </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+    }
+
     function showSpResult(obj) {
         const el = document.getElementById('spResult');
-        if (typeof obj === 'string') el.textContent = obj;
-        else el.textContent = JSON.stringify(obj, null, 2);
+        if (typeof obj === 'string') {
+            el.textContent = obj;
+            return;
+        }
+        if (typeof obj === 'number') {
+            el.textContent = String(obj);
+            return;
+        }
+        if (Array.isArray(obj)) {
+            const allNumbers = obj.every(v => typeof v === 'number');
+            if (allNumbers) {
+                el.innerHTML = `<ul>${obj.map(n => `<li>${esc(n)}</li>`).join('')}</ul>`;
+                return;
+            }
+            el.innerHTML = renderTicketsTable(obj);
+            return;
+        }
+        if (obj && typeof obj === 'object') {
+            el.innerHTML = renderTicketsTable([obj]);
+            return;
+        }
+        el.textContent = '';
     }
 
     async function spFetchJson(url, opts) {
@@ -866,7 +1062,12 @@
 
             reload();
         } catch (e) {
-            showSpResult(String(e));
+            const msg = String(e);
+            if (msg.includes('ticket not found')) {
+                showSpResult('Ticket with this id was not found');
+            } else {
+                showSpResult(msg);
+            }
         }
     };
 
@@ -879,7 +1080,15 @@
                 `${ctx()}/api/tickets/special/cancel-person-bookings?personId=${personId}`,
                 { method: 'POST' }
             );
-            showSpResult({ cancelledTickets: data });
+            if (typeof data === 'number') {
+                if (data > 0) {
+                    showSpResult(`personId ${personId} removed from ${data} ticket(s)`);
+                } else {
+                    showSpResult(`No tickets found with personId ${personId}`);
+                }
+            } else {
+                showSpResult(`Unexpected response: ${JSON.stringify(data)}`);
+            }
 
             reload();
         } catch (e) {

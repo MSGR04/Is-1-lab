@@ -27,17 +27,33 @@ public class TicketResource {
             @QueryParam("size") @DefaultValue("20") int size,
             @QueryParam("sort") @DefaultValue("id") String sort,
             @QueryParam("order") @DefaultValue("asc") String order,
+            @QueryParam("id") Long id,
             @QueryParam("name") String name,
+            @QueryParam("comment") String comment,
+            @QueryParam("coordinatesX") Integer coordinatesX,
+            @QueryParam("coordinatesY") Long coordinatesY,
+            @QueryParam("creationDate") String creationDate,
+            @QueryParam("personId") Long personId,
+            @QueryParam("eventId") Long eventId,
+            @QueryParam("venueId") Long venueId,
             @QueryParam("priceMin") Double priceMin,
             @QueryParam("priceMax") Double priceMax,
+            @QueryParam("price") Double price,
             @QueryParam("type") TicketType type,
+            @QueryParam("discount") Long discount,
+            @QueryParam("number") Long number,
             @QueryParam("refundable") Boolean refundable
     ) {
         if (page < 0) page = 0;
         if (size < 1) size = 1;
         if (size > 200) size = 200;
 
-        return service.list(page, size, sort, order, name, priceMin, priceMax, type, refundable);
+        return service.list(
+                page, size, sort, order,
+                id, name, comment, coordinatesX, coordinatesY, creationDate,
+                personId, eventId, venueId,
+                priceMin, priceMax, price, type, discount, number, refundable
+        );
     }
 
     @GET
