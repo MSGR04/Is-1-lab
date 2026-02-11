@@ -8,7 +8,7 @@ import jakarta.websocket.server.ServerEndpoint;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-@ServerEndpoint("/ws/events")
+@ServerEndpoint(value = "/ws/events", configurator = AuthWsConfigurator.class)
 @ApplicationScoped
 public class EventWsEndpoint {
 
@@ -17,6 +17,7 @@ public class EventWsEndpoint {
 
     @OnOpen
     public void onOpen(Session session) {
+        if (!AuthWsUtil.authorizeOrClose(session)) return;
         sessions.add(session);
         System.out.println("[ws-events] open " + session.getId() + " total=" + sessions.size());
     }

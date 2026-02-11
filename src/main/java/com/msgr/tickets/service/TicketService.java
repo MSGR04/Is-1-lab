@@ -94,10 +94,16 @@ public class TicketService {
         t.setName(in.getName());
         t.setCoordinates(coordinatesMapper.toEmbeddable(in.getCoordinates()));
 
+        // Business rule for this lab: personId=0 means "no person".
+        Long personId = in.getPersonId();
+        if (personId != null && personId <= 0) {
+            personId = null;
+        }
+
         Person person = null;
-        if (in.getPersonId() != null) {
-            person = em.find(Person.class, in.getPersonId());
-            if (person == null) throw new NotFoundException("person not found: " + in.getPersonId());
+        if (personId != null) {
+            person = em.find(Person.class, personId);
+            if (person == null) throw new NotFoundException("person not found: " + personId);
         }
 
         Event event = em.find(Event.class, in.getEventId());
@@ -128,11 +134,11 @@ public class TicketService {
         dto.setCoordinates(coordinatesMapper.toDto(t.getCoordinates()));
         dto.setCreationDate(t.getCreationDate());
 
-        dto.setPersonId(t.getPerson().getId());
+        dto.setPersonId(t.getPerson() == null ? null : t.getPerson().getId());
         dto.setEventId(t.getEvent().getId());
         dto.setVenueId(t.getVenue() == null ? null : t.getVenue().getId());
 
-        dto.setPerson(personService.get(t.getPerson().getId()));
+        dto.setPerson(t.getPerson() == null ? null : personService.get(t.getPerson().getId()));
         dto.setEvent(eventService.get(t.getEvent().getId()));
         dto.setVenue(t.getVenue() == null ? null : venueService.get(t.getVenue().getId()));
 

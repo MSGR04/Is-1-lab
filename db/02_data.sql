@@ -3,6 +3,8 @@ TRUNCATE TABLE tickets RESTART IDENTITY CASCADE;
 TRUNCATE TABLE venues  RESTART IDENTITY CASCADE;
 TRUNCATE TABLE events  RESTART IDENTITY CASCADE;
 TRUNCATE TABLE persons RESTART IDENTITY CASCADE;
+TRUNCATE TABLE auth_sessions CASCADE;
+TRUNCATE TABLE app_users RESTART IDENTITY CASCADE;
 
 INSERT INTO persons (id, eyeColor, hairColor, location_x, location_y, location_z, passportID, nationality)
 VALUES
@@ -22,3 +24,8 @@ VALUES
     (2, 'Downtown Bar',  120,   'BAR',     NULL,      10.0, 11.0, 12.0),
     (3, 'City Theatre',  900,   'THEATRE', '7654321',  -7.0, 0.0,  7.0);
 
+SELECT setval(pg_get_serial_sequence('venues',  'id'), COALESCE((SELECT MAX(id) + 1 FROM venues), 1), false);
+SELECT setval(pg_get_serial_sequence('persons', 'id'), COALESCE((SELECT MAX(id) + 1 FROM persons), 1), false);
+SELECT setval(pg_get_serial_sequence('events',  'id'), COALESCE((SELECT MAX(id) + 1 FROM events), 1), false);
+SELECT setval(pg_get_serial_sequence('tickets', 'id'), COALESCE((SELECT MAX(id) + 1 FROM tickets), 1), false);
+SELECT setval(pg_get_serial_sequence('app_users', 'id'), COALESCE((SELECT MAX(id) + 1 FROM app_users), 1), false);

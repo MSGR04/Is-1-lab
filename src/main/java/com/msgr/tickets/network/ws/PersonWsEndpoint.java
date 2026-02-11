@@ -7,7 +7,7 @@ import jakarta.websocket.server.ServerEndpoint;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-@ServerEndpoint("/ws/persons")
+@ServerEndpoint(value = "/ws/persons", configurator = AuthWsConfigurator.class)
 public class PersonWsEndpoint {
     private static final Set<Session> sessions = ConcurrentHashMap.newKeySet();
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -18,7 +18,10 @@ public class PersonWsEndpoint {
     }
 
     @OnOpen
-    public void onOpen(Session session) { sessions.add(session); }
+    public void onOpen(Session session) {
+        if (!AuthWsUtil.authorizeOrClose(session)) return;
+        sessions.add(session);
+    }
 
     @OnClose
     public void onClose(Session session, CloseReason reason) { sessions.remove(session); }

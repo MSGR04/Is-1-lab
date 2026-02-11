@@ -7,27 +7,21 @@
              version="3.0">
 
     <persistence-unit name="ticketsPU" transaction-type="JTA">
-        <!-- JTA datasource из standalone.xml -->
 
         <jta-data-source>java:jboss/datasources/TicketsDS</jta-data-source>
 
-        <!-- WildFly сам управляет EntityManager -->
         <properties>
 
-            <!-- НИЧЕГО не трогаем в БД (ты уже создаёшь схемы SQL-скриптами) -->
             <property name="jakarta.persistence.schema-generation.database.action"
                       value="none"/>
 
-            <!-- Hibernate -->
             <property name="hibernate.dialect"
                       value="org.hibernate.dialect.PostgreSQLDialect"/>
 
-            <!-- Логи SQL (удобно для отладки ЛР) -->
             <property name="hibernate.show_sql" value="true"/>
             <property name="hibernate.format_sql" value="true"/>
             <property name="hibernate.use_sql_comments" value="true"/>
 
-            <!-- Корректная интеграция с JTA WildFly -->
             <property name="hibernate.transaction.jta.platform"
                       value="org.hibernate.engine.transaction.jta.platform.internal.JBossAppServerJtaPlatform"/>
 

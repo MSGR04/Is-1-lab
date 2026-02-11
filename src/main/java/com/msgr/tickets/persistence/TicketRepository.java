@@ -176,7 +176,11 @@ public class TicketRepository {
             }
         }
         if (personId != null) {
-            predicates.add(cb.equal(root.get("person").get("id"), personId));
+            if (personId == 0L) {
+                predicates.add(cb.isNull(root.get("person")));
+            } else {
+                predicates.add(cb.equal(root.get("person").get("id"), personId));
+            }
         }
         if (eventId != null) {
             predicates.add(cb.equal(root.get("event").get("id"), eventId));

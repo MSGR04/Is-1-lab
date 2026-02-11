@@ -9,7 +9,7 @@
             --card:#ffffff;
             --text:#101828;
             --muted:#667085;
-            --border:#e6eaf2;
+            --border:#8ea0b8;
             --shadow:0 10px 30px rgba(16,24,40,.08);
             --shadow2:0 4px 14px rgba(16,24,40,.08);
             --radius:16px;
@@ -144,7 +144,7 @@
 
         input, select, textarea{
             width: 100%;
-            border: 1px solid var(--border);
+            border: 1px solid #7f91ab;
             border-radius: 12px;
             padding: 10px 12px;
             background: #fff;
@@ -154,11 +154,11 @@
         textarea{ min-height: 90px; resize: vertical; }
         input:focus, select:focus, textarea:focus{
             box-shadow: var(--focus);
-            border-color: rgba(255,204,0,.8);
+            border-color: #f0c419;
         }
 
         .btn{
-            border: 1px solid var(--border);
+            border: 1px solid #7487a2;
             background: #fff;
             color: var(--text);
             padding: 10px 12px;
@@ -171,7 +171,7 @@
         .btn:active{ transform: translateY(1px); }
         .btn.primary{
             background: var(--accent);
-            border-color: rgba(0,0,0,.08);
+            border-color: #d0aa00;
             color: #111827;
             font-weight:700;
         }
@@ -298,11 +298,39 @@
             border-radius: 14px;
             border:1px dashed var(--border);
             background:#fbfcff;
+            overflow: hidden;
         }
         .result h4{
             margin:0 0 8px;
             font-size: 13px;
             color: var(--muted);
+        }
+        #spResult{
+            max-width: 100%;
+        }
+        #spResult .sp-table-wrap{
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+        }
+        #spResult .sp-table-wrap table{
+            width: max-content;
+            min-width: 980px;
+            border: 0;
+            border-radius: 0;
+            margin: 0;
+        }
+        #spResult .sp-table-wrap thead th{
+            position: static;
+            white-space: nowrap;
+        }
+        #spResult .sp-table-wrap tbody td{
+            white-space: nowrap;
+            font-size: 12px;
         }
         .mono{
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
@@ -330,6 +358,7 @@
             <a href="./venues.html">Venues</a>
             <a href="./persons.html">Persons</a>
             <a href="./events.html">Events</a>
+            <button class="btn" id="logoutBtn" type="button">Logout</button>
         </div>
     </div>
 
@@ -376,7 +405,7 @@
 
                 <div class="field">
                     <label>personId</label>
-                    <input id="fPersonId" type="number" min="1" placeholder="Exact personId">
+                    <input id="fPersonId" type="number" min="0" placeholder="Exact personId (0 = null)">
                 </div>
 
                 <div class="field">
@@ -498,7 +527,7 @@
                     <div class="field"><label>Coordinates.x (<=265)</label><input id="tX" type="number" max="265" required></div>
                     <div class="field"><label>Coordinates.y</label><input id="tY" type="number" required></div>
 
-                    <div class="field"><label>personId</label><input id="tPersonId" type="number" min="1" placeholder="empty = null"></div>
+                    <div class="field"><label>personId</label><input id="tPersonId" type="number" min="0" placeholder="0 or empty = null"></div>
                     <div class="field"><label>eventId</label><input id="tEventId" type="number" min="1" required></div>
 
                     <div class="field"><label>venueId (optional)</label><input id="tVenueId" type="number" min="1" placeholder="empty = null"></div>
@@ -518,6 +547,11 @@
                         <label>comment</label>
                         <textarea id="tComment" required></textarea>
                     </div>
+                </div>
+
+                <div class="result" style="margin-top:12px;">
+                    <h4>Related objects</h4>
+                    <div id="relBox" class="mono"></div>
                 </div>
             </div>
 
@@ -590,7 +624,7 @@
                     <div class="row">
                         <div class="field" style="flex:1;">
                             <label>personId</label>
-                            <input id="spCancelPersonId" type="number" min="1" placeholder="e.g. 3">
+                            <input id="spCancelPersonId" type="number" min="0" placeholder="e.g. 3">
                         </div>
                         <button class="btn danger" id="spCancelBtn">Run</button>
                     </div>
@@ -647,6 +681,20 @@
         return p.length > 1 ? '/' + p[1] : '';
     }
 
+    async function ensureAuth() {
+        const r = await fetch(`${ctx()}/api/auth/me`);
+        if (r.status === 401) {
+            location.href = `${ctx()}/login.html`;
+            return false;
+        }
+        return r.ok;
+    }
+
+    async function logout() {
+        await fetch(`${ctx()}/api/auth/logout`, { method: 'POST' });
+        location.href = `${ctx()}/login.html`;
+    }
+
     async function fetchTickets() {
         const qs = new URLSearchParams();
         qs.set('page', state.page);
@@ -684,7 +732,7 @@
         <td>${t.name}</td>
         <td>${t.coordinates ? `${t.coordinates.x},${t.coordinates.y}` : ''}</td>
         <td>${Array.isArray(t.creationDate) ? t.creationDate.join('-') : t.creationDate}</td>
-        <td>${t.personId}</td>
+        <td>${t.personId ?? 0}</td>
         <td>${t.eventId}</td>
         <td>${t.venueId ?? ''}</td>
         <td>${t.price}</td>
@@ -816,7 +864,7 @@
         document.getElementById('tName').value = t?.name ?? '';
         document.getElementById('tX').value = t?.coordinates?.x ?? 0;
         document.getElementById('tY').value = t?.coordinates?.y ?? 0;
-        document.getElementById('tPersonId').value = t?.personId ?? 1;
+        document.getElementById('tPersonId').value = t?.personId ?? 0;
         document.getElementById('tEventId').value = t?.eventId ?? 1;
         document.getElementById('tVenueId').value = t?.venueId ?? '';
         document.getElementById('tPrice').value = t?.price ?? 1;
@@ -830,7 +878,8 @@
             const p = t?.person ? `Person: #${t.person.id}, passport=${t.person.passportID}, nat=${t.person.nationality}` : 'Person: —';
             const e = t?.event ? `Event: #${t.event.id}, name=${t.event.name}, type=${t.event.eventType}` : 'Event: —';
             const v = t?.venue ? `Venue: #${t.venue.id}, name=${t.venue.name}, type=${t.venue.type}` : 'Venue: null';
-            document.getElementById('relBox').textContent = `${p}\n${e}\n${v}`;
+            const relBox = document.getElementById('relBox');
+            if (relBox) relBox.textContent = `${p}\n${e}\n${v}`;
         }
         renderRelated(t)
     }
@@ -845,9 +894,12 @@
                 x: parseInt(document.getElementById('tX').value, 10),
                 y: parseInt(document.getElementById('tY').value, 10)
             },
-                personId: document.getElementById('tPersonId').value.trim()
-                    ? parseInt(document.getElementById('tPersonId').value, 10)
-                    : null,
+                personId: (() => {
+                    const raw = document.getElementById('tPersonId').value.trim();
+                    if (!raw) return null;
+                    const n = parseInt(raw, 10);
+                    return Number.isNaN(n) || n <= 0 ? null : n;
+                })(),
             eventId: parseInt(document.getElementById('tEventId').value, 10),
             venueId: document.getElementById('tVenueId').value.trim() ? parseInt(document.getElementById('tVenueId').value, 10) : null,
             price: parseFloat(document.getElementById('tPrice').value),
@@ -949,7 +1001,7 @@
                 <td>${esc(t.name)}</td>
                 <td>${esc(t.coordinates ? `${t.coordinates.x},${t.coordinates.y}` : '')}</td>
                 <td>${esc(Array.isArray(t.creationDate) ? t.creationDate.join('-') : t.creationDate)}</td>
-                <td>${esc(t.personId)}</td>
+                <td>${esc(t.personId ?? 0)}</td>
                 <td>${esc(t.eventId)}</td>
                 <td>${esc(t.venueId ?? '')}</td>
                 <td>${esc(t.price)}</td>
@@ -962,26 +1014,28 @@
         `).join('');
 
         return `
-            <table>
-                <thead>
-                <tr>
-                    <th>id</th>
-                    <th>name</th>
-                    <th>coords</th>
-                    <th>creationDate</th>
-                    <th>personId</th>
-                    <th>eventId</th>
-                    <th>venueId</th>
-                    <th>price</th>
-                    <th>type</th>
-                    <th>discount</th>
-                    <th>number</th>
-                    <th>comment</th>
-                    <th>refundable</th>
-                </tr>
-                </thead>
-                <tbody>${rows}</tbody>
-            </table>
+            <div class="sp-table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>name</th>
+                        <th>coords</th>
+                        <th>creationDate</th>
+                        <th>personId</th>
+                        <th>eventId</th>
+                        <th>venueId</th>
+                        <th>price</th>
+                        <th>type</th>
+                        <th>discount</th>
+                        <th>number</th>
+                        <th>comment</th>
+                        <th>refundable</th>
+                    </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
         `;
     }
 
@@ -1073,8 +1127,10 @@
 
     document.getElementById('spCancelBtn').onclick = async () => {
         try {
-            const personId = parseInt(document.getElementById('spCancelPersonId').value, 10);
-            if (!personId || personId <= 0) { showSpResult("personId must be > 0"); return; }
+            const rawPersonId = document.getElementById('spCancelPersonId').value.trim();
+            if (!rawPersonId) { showSpResult("personId is required"); return; }
+            const personId = parseInt(rawPersonId, 10);
+            if (Number.isNaN(personId) || personId < 0) { showSpResult("personId must be >= 0"); return; }
 
             const data = await spFetchJson(
                 `${ctx()}/api/tickets/special/cancel-person-bookings?personId=${personId}`,
@@ -1096,8 +1152,16 @@
         }
     };
 
-    reload();
-    connectWs();
+    async function init() {
+        const ok = await ensureAuth();
+        if (!ok) return;
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.onclick = logout;
+        reload();
+        connectWs();
+    }
+
+    init();
 </script>
 </body>
 </html>

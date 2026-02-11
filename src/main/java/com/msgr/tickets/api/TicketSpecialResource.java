@@ -56,7 +56,7 @@ public class TicketSpecialResource {
     @POST
     @Path("/cancel-person-bookings")
     public long cancelPersonBookings(@QueryParam("personId") long personId) {
-        if (personId <= 0) throw new BadRequestException("personId must be > 0");
+        if (personId < 0) throw new BadRequestException("personId must be >= 0");
         return service.cancelPersonBookings(personId);
     }
 }

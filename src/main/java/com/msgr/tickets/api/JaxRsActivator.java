@@ -9,6 +9,8 @@ public class JaxRsActivator extends Application {
     @Override
     public Set<Class<?>> getClasses() {
         return Set.of(
+                AuthResource.class,
+                AuthFilter.class,
                 TicketResource.class,
                 EventResource.class,
                 PersonResource.class,

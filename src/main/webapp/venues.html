@@ -5,7 +5,7 @@
     <title>Ticket IS · Venues</title>
     <style>
         :root{
-            --bg:#f4f6fa; --card:#ffffff; --text:#101828; --muted:#667085; --border:#e6eaf2;
+            --bg:#f4f6fa; --card:#ffffff; --text:#101828; --muted:#667085; --border:#8ea0b8;
             --shadow:0 10px 30px rgba(16,24,40,.08); --shadow2:0 4px 14px rgba(16,24,40,.08);
             --radius:16px; --accent:#ffcc00; --danger:#ef4444; --focus:0 0 0 3px rgba(255,204,0,.35);
             --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
@@ -41,14 +41,14 @@
             background: #fff;
         }
         .field label{ font-size:12px; color:var(--muted); }
-        input, select, textarea{ width:100%; border:1px solid var(--border); border-radius:12px; padding:10px 12px; background:#fff; outline:none; }
-        input:focus, select:focus, textarea:focus{ box-shadow:var(--focus); border-color: rgba(255,204,0,.8); }
+        input, select, textarea{ width:100%; border:1px solid #7f91ab; border-radius:12px; padding:10px 12px; background:#fff; outline:none; }
+        input:focus, select:focus, textarea:focus{ box-shadow:var(--focus); border-color:#f0c419; }
         .btn{
-            border:1px solid var(--border); background:#fff; color:var(--text);
+            border:1px solid #7487a2; background:#fff; color:var(--text);
             padding:10px 12px; border-radius:12px; cursor:pointer;
         }
         .btn:hover{ background:#f8fafc; }
-        .btn.primary{ background:var(--accent); border-color:rgba(0,0,0,.08); color:#111827; font-weight:700; }
+        .btn.primary{ background:var(--accent); border-color:#d0aa00; color:#111827; font-weight:700; }
         .btn.dark{ background:#111827; color:#fff; border-color:#111827; }
         .btn.danger{ background:rgba(239,68,68,.08); border-color:rgba(239,68,68,.25); color:var(--danger); }
         .pager{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -93,6 +93,7 @@
             <a class="active" href="./venues.html">Venues</a>
             <a href="./persons.html">Persons</a>
             <a href="./events.html">Events</a>
+            <button class="btn" id="logoutBtn" type="button">Logout</button>
         </div>
     </div>
 
@@ -263,6 +264,20 @@
     function ctx() {
         const p = location.pathname.split('/');
         return p.length > 1 ? '/' + p[1] : '';
+    }
+
+    async function ensureAuth() {
+        const r = await fetch(`${ctx()}/api/auth/me`);
+        if (r.status === 401) {
+            location.href = `${ctx()}/login.html`;
+            return false;
+        }
+        return r.ok;
+    }
+
+    async function logout() {
+        await fetch(`${ctx()}/api/auth/logout`, { method: 'POST' });
+        location.href = `${ctx()}/login.html`;
     }
 
     const state = { page: 0, size: 20, sort: 'id', order: 'asc', id: '', name: '', type: '', zipCode: '', capacity: '', townX: '', townY: '', townZ: '' };
@@ -496,11 +511,18 @@
         return ws;
     }
 
-    // init
-    document.getElementById('sortSel').value = state.sort;
-    document.getElementById('orderSel').value = state.order;
-    reload();
-    connectWsVenues();
+    async function init() {
+        const ok = await ensureAuth();
+        if (!ok) return;
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.onclick = logout;
+        document.getElementById('sortSel').value = state.sort;
+        document.getElementById('orderSel').value = state.order;
+        reload();
+        connectWsVenues();
+    }
+
+    init();
 </script>
 </body>
 </html>
