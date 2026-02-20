@@ -614,7 +614,7 @@ public class TicketService {
         return new BadRequestException("field '" + field + "' must be unique");
     }
 
-    private <T> void validateEntity(T entity, int rowNumber, String objectName) {
+     private <T> void validateEntity(T entity, int rowNumber, String objectName) {
         Set<ConstraintViolation<T>> violations = validator.validate(entity);
         if (violations.isEmpty()) {
             return;

@@ -1,4 +1,4 @@
 ﻿name,coordinates.x,coordinates.y,price,type,discount,number,comment,refundable,event.name,event.ticketsCount,event.eventType,person.eyeColor,person.hairColor,person.location.x,person.location.y,person.location.z,person.passportID,person.nationality,venue.name,venue.capacity,venue.type,venue.address.zipCode,venue.address.town.x,venue.address.town.y,venue.address.town.z
-5t45,52,115,60.75,CHEAP,14,45,Fuw,true,Event Full 1,350,EXPOSITION,RED,YELLOW,1.0,2.0,3.0,PASSPORT-0001,ITALY,Venue Full 1,500,STADIUM,1234567,10.0,20.0,30.0
-32,22,55,300.0,BUDGETARY,20,42,S23123fsdftdsrow,false,Event Full 2,400,BASEBALL,ORANGE,RED,11.5,22.5,33.5,PASSPORT-0002,JAPAN,Venue Full 2,700,CINEMA,7654321,15.0,25.0,35.0
+ывп5,79,73,0.75,CHEAP,14,56,ава,true,Event Full 1,350,EXPOSITION,RED,YELLOW,1.0,2.0,3.0,PASSPORT-0001,ITALY,Venue Full 1,500,STADIUM,1234567,10.0,20.0,30.0
+1впывыв2,74,71,300.0,BUDGETARY,25,77,Sпв3fsdftdsrow,false,Event Full 2,400,BASEBALL,ORANGE,RED,11.5,22.5,33.5,PASSPORT-0002,JAPAN,Venue Full 2,700,CINEMA,7654321,15.0,25.0,35.0
 
