@@ -2,6 +2,7 @@ package com.msgr.tickets.service;
 
 import com.msgr.tickets.domain.entity.AppUser;
 import com.msgr.tickets.domain.entity.AuthSession;
+import com.msgr.tickets.network.dto.AuthBootstrapAdminResultDto;
 import com.msgr.tickets.network.dto.AuthUserDto;
 import com.msgr.tickets.persistence.AppUserRepository;
 import com.msgr.tickets.persistence.AuthSessionRepository;
@@ -9,6 +10,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotAuthorizedException;
 
 import javax.crypto.SecretKeyFactory;
@@ -86,6 +88,53 @@ public class AuthService {
     public Optional<AuthUserDto> resolveUser(String token) {
         if (token == null || token.isBlank()) return Optional.empty();
         return sessionRepo.findValidByToken(token).map(s -> toDto(s.getUser()));
+    }
+
+    @Transactional
+    public AuthUserDto grantAdmin(String requesterToken, String targetUsernameRaw) {
+        AppUser requester = sessionRepo.findValidByToken(requesterToken)
+                .map(AuthSession::getUser)
+                .orElseThrow(() -> new NotAuthorizedException("unauthorized"));
+
+        String targetUsername = normalize(targetUsernameRaw);
+        if (targetUsername.length() < 3) {
+            throw new BadRequestException("username must be at least 3 chars");
+        }
+
+        AppUser targetUser = userRepo.findByUsername(targetUsername)
+                .orElseThrow(() -> new BadRequestException("user not found"));
+
+        boolean requesterIsAdmin = "ADMIN".equalsIgnoreCase(requester.getRole());
+        boolean hasAnyAdmin = userRepo.countByRole("ADMIN") > 0;
+        boolean selfBootstrap = !hasAnyAdmin && requester.getId().equals(targetUser.getId());
+
+        if (!requesterIsAdmin && !selfBootstrap) {
+            throw new ForbiddenException("admin role required");
+        }
+
+        targetUser.setRole("ADMIN");
+        userRepo.save(targetUser);
+        return toDto(targetUser);
+    }
+
+    @Transactional
+    public AuthBootstrapAdminResultDto bootstrapAdmin(String requesterToken) {
+        AppUser requester = sessionRepo.findValidByToken(requesterToken)
+                .map(AuthSession::getUser)
+                .orElseThrow(() -> new NotAuthorizedException("unauthorized"));
+
+        if ("ADMIN".equalsIgnoreCase(requester.getRole())) {
+            return new AuthBootstrapAdminResultDto(true, "already admin", toDto(requester));
+        }
+
+        boolean hasAnyAdmin = userRepo.countByRole("ADMIN") > 0;
+        if (hasAnyAdmin) {
+            return new AuthBootstrapAdminResultDto(false, "\u0430\u0434\u043c\u0438\u043d \u0443\u0436\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442", toDto(requester));
+        }
+
+        requester.setRole("ADMIN");
+        userRepo.save(requester);
+        return new AuthBootstrapAdminResultDto(true, "role granted", toDto(requester));
     }
 
     private AuthUserDto toDto(AppUser u) {

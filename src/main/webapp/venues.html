@@ -489,7 +489,7 @@
 
     function wsBase() {
         const proto = location.protocol === "https:" ? "wss:" : "ws:";
-        return `${proto}//${location.host}${ctx()}`; // ctx() уже возвращает /ticket-is
+        return `${proto}//${location.host}${ctx()}`;
     }
 
     let wsReloadTimer = null;

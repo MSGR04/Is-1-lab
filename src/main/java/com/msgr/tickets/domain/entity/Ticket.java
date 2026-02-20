@@ -60,6 +60,7 @@ public class Ticket {
 
 
     @Column(nullable = false)
+    @Positive
     private long number;
 
     @NotNull

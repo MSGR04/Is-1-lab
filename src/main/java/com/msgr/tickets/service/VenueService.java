@@ -59,7 +59,7 @@ public class VenueService {
     @Transactional
     public VenueDto update(long id, VenueUpsertDto in) {
         Venue v = repo.findById(id).orElseThrow(() -> new NotFoundException("venue not found: " + id));
-        mapper.applyUpsert(v, in);
+        mapper.applyUpsert(v, in);  
         v = repo.save(v);
 
         VenueWsEndpoint.broadcast(new VenueWsMessage("CREATED", v.getId()));

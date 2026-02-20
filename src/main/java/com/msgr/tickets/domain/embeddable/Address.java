@@ -18,7 +18,7 @@ public class Address implements Serializable {
 
     @Size(min = 7)
     @Column(name = "address_zip_code")
-    private String zipCode; // может быть null
+    private String zipCode;
 
     @Valid
     @Embedded
@@ -27,5 +27,5 @@ public class Address implements Serializable {
             @AttributeOverride(name = "y", column = @Column(name = "town_y", nullable = true)),
             @AttributeOverride(name = "z", column = @Column(name = "town_z", nullable = true))
     })
-    private Location town; // может быть null
+    private Location town;
 }

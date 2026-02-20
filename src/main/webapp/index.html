@@ -372,6 +372,56 @@
                 </div>
             </div>
 
+            <div class="row" style="margin-bottom: 10px;">
+                <div class="field" style="min-width: 360px;">
+                    <label>CSV import (one row = ticket with nested objects)</label>
+                    <input id="importCsvFile" type="file" accept=".csv,text/csv">
+                </div>
+                <button class="btn dark" id="importCsvBtn" type="button">Import CSV</button>
+            </div>
+            <div class="hint" style="margin-bottom: 10px;">
+                Required CSV columns: name, coordinates.x, coordinates.y, price, type, discount, number,
+                comment, refundable, event.name, event.eventType.
+                Optional nested columns: person.*, event.ticketsCount, venue.*.
+            </div>
+
+            <div class="result" style="margin-bottom:12px;">
+                <h4>Import history</h4>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>operation id</th>
+                        <th>status</th>
+                        <th>user</th>
+                        <th>imported count</th>
+                    </tr>
+                    </thead>
+                    <tbody id="importHistoryBody"></tbody>
+                </table>
+            </div>
+
+            <div class="result" id="adminGrantPanel" style="margin-bottom:12px; display:none;">
+                <h4>Admin management</h4>
+                <div class="row">
+                    <div class="field" style="min-width:260px;">
+                        <label>Username to promote</label>
+                        <input id="grantAdminUsername" placeholder="username">
+                    </div>
+                    <button class="btn dark" id="grantAdminBtn" type="button">Grant admin</button>
+                </div>
+                <div class="hint" id="grantAdminMsg" style="margin-top:8px;"></div>
+            </div>
+
+            <div class="result" id="adminBootstrapPanel" style="margin-bottom:12px; display:none;">
+                <h4>Admin bootstrap</h4>
+                <div class="row">
+                    <button class="btn dark" id="bootstrapAdminBtn" type="button">Make me admin</button>
+                </div>
+                <div class="hint" id="bootstrapAdminMsg" style="margin-top:8px;">
+                    Available only when there is no admin in the system.
+                </div>
+            </div>
+
             <div class="row">
                 <div class="field">
                     <label>Name (exact)</label>
@@ -654,6 +704,7 @@
         return `${proto}//${location.host}/ticket-is`;
     }
     const log = (msg) => document.getElementById('log').textContent = msg;
+    let currentUser = null;
 
     const state = {
         page: 0,
@@ -687,7 +738,9 @@
             location.href = `${ctx()}/login.html`;
             return false;
         }
-        return r.ok;
+        if (!r.ok) return false;
+        currentUser = await r.json();
+        return true;
     }
 
     async function logout() {
@@ -721,7 +774,81 @@
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return await r.json();
     }
+    async function fetchImportHistory() {
+        const r = await fetch(`${ctx()}/api/tickets/import/history`);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return await r.json();
+    }
 
+    function renderImportHistory(items) {
+        const tb = document.getElementById('importHistoryBody');
+        if (!tb) return;
+
+        tb.innerHTML = '';
+        for (const op of (items || [])) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${op.id}</td>
+                <td>${op.status}</td>
+                <td>${op.username}</td>
+                <td>${op.importedCount ?? ''}</td>
+            `;
+            tb.appendChild(tr);
+        }
+    }
+
+    async function reloadImportHistory() {
+        try {
+            const history = await fetchImportHistory();
+            renderImportHistory(history);
+        } catch (e) {
+            console.error('import history load failed', e);
+        }
+    }
+
+    function showAdminMessage(id, message, ok) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = message || '';
+        el.style.color = ok ? 'var(--ok)' : 'var(--danger)';
+    }
+
+    function setupAdminPanels() {
+        const role = (currentUser?.role || '').toUpperCase();
+        const isAdmin = role === 'ADMIN';
+        const adminPanel = document.getElementById('adminGrantPanel');
+        const bootstrapPanel = document.getElementById('adminBootstrapPanel');
+
+        if (adminPanel) {
+            adminPanel.style.display = isAdmin ? 'block' : 'none';
+        }
+        if (bootstrapPanel) {
+            bootstrapPanel.style.display = isAdmin ? 'none' : 'block';
+        }
+
+        showAdminMessage('grantAdminMsg', '', false);
+        showAdminMessage('bootstrapAdminMsg', 'Available only when there is no admin in the system.', false);
+    }
+
+    async function grantAdmin(username) {
+        const r = await fetch(`${ctx()}/api/auth/admin/grant`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username })
+        });
+        const txt = await r.text();
+        if (!r.ok) throw new Error(txt || `HTTP ${r.status}`);
+        return txt ? JSON.parse(txt) : null;
+    }
+
+    async function bootstrapAdmin() {
+        const r = await fetch(`${ctx()}/api/auth/admin/bootstrap`, {
+            method: 'POST'
+        });
+        const txt = await r.text();
+        if (!r.ok) throw new Error(txt || `HTTP ${r.status}`);
+        return txt ? JSON.parse(txt) : null;
+    }
     function render(pageDto) {
         const tb = document.getElementById('tbody');
         tb.innerHTML = '';
@@ -875,8 +1002,8 @@
         document.getElementById('tRefundable').value = String(t?.refundable ?? false);
         dlg.showModal();
         function renderRelated(t){
-            const p = t?.person ? `Person: #${t.person.id}, passport=${t.person.passportID}, nat=${t.person.nationality}` : 'Person: —';
-            const e = t?.event ? `Event: #${t.event.id}, name=${t.event.name}, type=${t.event.eventType}` : 'Event: —';
+            const p = t?.person ? 'Person: #' + t.person.id + ', passport=' + t.person.passportID + ', nat=' + t.person.nationality : 'Person: -';
+            const e = t?.event ? 'Event: #' + t.event.id + ', name=' + t.event.name + ', type=' + t.event.eventType : 'Event: -';
             const v = t?.venue ? `Venue: #${t.venue.id}, name=${t.venue.name}, type=${t.venue.type}` : 'Venue: null';
             const relBox = document.getElementById('relBox');
             if (relBox) relBox.textContent = `${p}\n${e}\n${v}`;
@@ -885,6 +1012,98 @@
     }
 
     document.getElementById('createBtn').onclick = () => openDialog(null);
+
+    document.getElementById('grantAdminBtn').onclick = async () => {
+        const input = document.getElementById('grantAdminUsername');
+        const username = (input?.value || '').trim();
+        if (!username) {
+            showAdminMessage('grantAdminMsg', 'Username is required', false);
+            return;
+        }
+
+        try {
+            const user = await grantAdmin(username);
+            showAdminMessage('grantAdminMsg', `Role updated: ${user.username} -> ${user.role}`, true);
+            if (input) input.value = '';
+        } catch (e) {
+            const msg = String(e);
+            if (msg.includes('admin role required')) {
+                showAdminMessage('grantAdminMsg', 'Only admins can grant admin role', false);
+            } else if (msg.includes('user not found')) {
+                showAdminMessage('grantAdminMsg', 'User not found', false);
+            } else {
+                showAdminMessage('grantAdminMsg', 'Failed to grant admin role', false);
+            }
+        }
+    };
+
+    document.getElementById('bootstrapAdminBtn').onclick = async () => {
+        if (!currentUser?.username) {
+            showAdminMessage('bootstrapAdminMsg', 'Unable to resolve current user', false);
+            return;
+        }
+
+        try {
+            const result = await bootstrapAdmin();
+            if (result?.granted && result?.user) {
+                currentUser = result.user;
+                setupAdminPanels();
+                await reloadImportHistory();
+                showAdminMessage('grantAdminMsg', `Role updated: ${result.user.username} -> ${result.user.role}`, true);
+                return;
+            }
+
+            if (result?.message) {
+                showAdminMessage('bootstrapAdminMsg', result.message, false);
+                return;
+            }
+
+            showAdminMessage('bootstrapAdminMsg', '\u0430\u0434\u043c\u0438\u043d \u0443\u0436\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442', false);
+        } catch (e) {
+            showAdminMessage('bootstrapAdminMsg', 'Failed to bootstrap admin role', false);
+        }
+    };
+
+    document.getElementById('importCsvBtn').onclick = async () => {
+        const fileInput = document.getElementById('importCsvFile');
+        const file = fileInput?.files?.[0];
+        if (!file) {
+            alert('Select a CSV file first');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file, file.name);
+
+        const r = await fetch(`${ctx()}/api/tickets/import/csv`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!r.ok) {
+            const txt = (await r.text()).trim();
+            await reloadImportHistory();
+            if (r.status === 400 && txt) {
+                alert(txt);
+                return;
+            }
+            alert(txt ? `import failed: ${r.status}\n${txt}` : `import failed: ${r.status}`);
+            return;
+        }
+
+        let importedCount = 0;
+        try {
+            const body = await r.json();
+            importedCount = Number(body?.importedCount ?? 0);
+        } catch (_) {
+            importedCount = 0;
+        }
+
+        fileInput.value = '';
+        alert(`Import complete: ${importedCount} ticket(s) created`);
+        reload();
+        await reloadImportHistory();
+    };
 
     document.getElementById('editForm').onsubmit = async () => {
         const id = document.getElementById('tId').value.trim();
@@ -936,7 +1155,7 @@
 
     function wsUrl() {
         const proto = location.protocol === "https:" ? "wss:" : "ws:";
-        return `${proto}//${location.host}${ctx()}/ws/tickets`; // важно: ctx()
+        return proto + '//' + location.host + ctx() + '/ws/tickets'; // important: ctx()
     }
 
     function stopHeartbeat() {
@@ -968,7 +1187,10 @@
 
         ws.onmessage = (e) => {
             clearTimeout(wsReloadTimer);
-            wsReloadTimer = setTimeout(() => reload(), 150);
+            wsReloadTimer = setTimeout(() => {
+                reload();
+                reloadImportHistory();
+            }, 150);
         };
 
         ws.onerror = (e) => {
@@ -1155,9 +1377,11 @@
     async function init() {
         const ok = await ensureAuth();
         if (!ok) return;
+        setupAdminPanels();
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) logoutBtn.onclick = logout;
         reload();
+        reloadImportHistory();
         connectWs();
     }
 

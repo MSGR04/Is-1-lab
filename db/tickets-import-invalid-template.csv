@@ -1,0 +1,7 @@
+﻿name,coordinates.x,coordinates.y,price,type,discount,number,comment,refundable,event.name,event.ticketsCount,event.eventType,person.eyeColor,person.hairColor,person.location.x,person.location.y,person.location.z,person.passportID,person.nationality,venue.name,venue.capacity,venue.type,venue.address.zipCode,venue.address.town.x,venue.address.town.y,venue.address.town.z
+Rollback Check Valid First,12,22,111.11,VIP,10,10,This row is valid,true,Event Valid For Rollback,120,FOOTBALL,,,,,,,,,,,,,,
+Invalid Enum Type,13,23,112.11,SUPER_VIP,10,11,Invalid ticket type,false,Event Invalid Type,130,BASEBALL,,,,,,,,,,,,,,
+Invalid Discount,14,24,113.11,USUAL,101,12,Discount > 100,false,Event Invalid Discount,140,EXPOSITION,,,,,,,,,,,,,,
+Missing Event Name,15,25,114.11,CHEAP,15,13,Event name is required,true,,150,E_SPORTS,,,,,,,,,,,,,,
+Invalid Person Partial,16,26,115.11,BUDGETARY,20,14,Person block started but incomplete,true,Event Invalid Person,160,FOOTBALL,RED,,,,,P-INVALID-1,ITALY,,,,,,,
+Invalid Venue Zip,17,27,116.11,VIP,25,15,Venue zip too short,true,Event Invalid Venue,170,BASEBALL,,,,,,,,Venue Invalid Zip,300,CINEMA,123,10.0,20.0,30.0

@@ -1,6 +1,8 @@
 package com.msgr.tickets.api;
 
 import com.msgr.tickets.network.dto.AuthLoginDto;
+import com.msgr.tickets.network.dto.AuthBootstrapAdminResultDto;
+import com.msgr.tickets.network.dto.AuthGrantAdminDto;
 import com.msgr.tickets.network.dto.AuthRegisterDto;
 import com.msgr.tickets.network.dto.AuthUserDto;
 import com.msgr.tickets.service.AuthService;
@@ -59,6 +61,23 @@ public class AuthResource {
     public AuthUserDto me(@CookieParam(AUTH_COOKIE) String token) {
         return authService.resolveUser(token)
                 .orElseThrow(() -> new NotAuthorizedException("unauthorized"));
+    }
+
+    @POST
+    @Path("/admin/grant")
+    public AuthUserDto grantAdmin(
+            @CookieParam(AUTH_COOKIE) String token,
+            @Valid AuthGrantAdminDto body
+    ) {
+        return authService.grantAdmin(token, body.getUsername());
+    }
+
+    @POST
+    @Path("/admin/bootstrap")
+    public AuthBootstrapAdminResultDto bootstrapAdmin(
+            @CookieParam(AUTH_COOKIE) String token
+    ) {
+        return authService.bootstrapAdmin(token);
     }
 
     public static NewCookie buildAuthCookie(String token) {

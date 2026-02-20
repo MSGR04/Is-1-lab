@@ -20,14 +20,12 @@ public class TicketSpecialResource {
     @Inject
     private TicketSpecialService service;
 
-    // 1) Ticket с минимальным venue
     @GET
     @Path("/min-venue")
     public TicketDto minVenue() {
         return service.minVenueTicket();
     }
 
-    // 2) Tickets, где venue < заданного
     @GET
     @Path("/venue-less-than")
     public List<TicketDto> venueLessThan(@QueryParam("venueId") long venueId) {
@@ -35,14 +33,12 @@ public class TicketSpecialResource {
         return service.ticketsWithVenueLessThan(venueId);
     }
 
-    // 3) Уникальные number
     @GET
     @Path("/unique-numbers")
     public List<Long> uniqueNumbers() {
         return service.uniqueNumbers();
     }
 
-    // 4) Клонировать Ticket + discount=% и поднять price на сумму скидки
     @POST
     @Path("/{id}/clone-with-discount")
     public TicketDto cloneWithDiscount(
@@ -52,7 +48,6 @@ public class TicketSpecialResource {
         return service.cloneWithDiscountRaise(id, percent);
     }
 
-    // 5) Отменить бронирования person
     @POST
     @Path("/cancel-person-bookings")
     public long cancelPersonBookings(@QueryParam("personId") long personId) {

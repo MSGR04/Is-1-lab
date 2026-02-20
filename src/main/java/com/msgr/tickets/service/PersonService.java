@@ -87,7 +87,6 @@ public class PersonService {
         TicketWsEndpoint.broadcast(new TicketWsMessage("REFRESH", null));
         repo.delete(oldP);
 
-        // WS
         PersonWsEndpoint.broadcast(new PersonWsMessage("DELETED", oldPersonId));
     }
 

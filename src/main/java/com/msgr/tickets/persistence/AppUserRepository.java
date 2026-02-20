@@ -37,4 +37,13 @@ public class AppUserRepository {
         }
         return em.merge(user);
     }
+
+    public long countByRole(String role) {
+        return em.createQuery(
+                        "select count(u) from AppUser u where upper(u.role) = upper(:role)",
+                        Long.class
+                )
+                .setParameter("role", role)
+                .getSingleResult();
+    }
 }

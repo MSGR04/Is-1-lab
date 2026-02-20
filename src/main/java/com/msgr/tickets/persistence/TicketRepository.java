@@ -63,6 +63,37 @@ public class TicketRepository {
         return Optional.ofNullable(em.find(Ticket.class, id));
     }
 
+    public boolean existsByName(String name, Long excludeId) {
+        String jpql = "select count(t) from Ticket t where t.name = :name";
+        if (excludeId != null) {
+            jpql += " and t.id <> :excludeId";
+        }
+
+        TypedQuery<Long> query = em.createQuery(jpql, Long.class)
+                .setParameter("name", name);
+        if (excludeId != null) {
+            query.setParameter("excludeId", excludeId);
+        }
+
+        return query.getSingleResult() > 0;
+    }
+
+    public boolean existsByCoordinates(int x, long y, Long excludeId) {
+        String jpql = "select count(t) from Ticket t where t.coordinates.x = :x and t.coordinates.y = :y";
+        if (excludeId != null) {
+            jpql += " and t.id <> :excludeId";
+        }
+
+        TypedQuery<Long> query = em.createQuery(jpql, Long.class)
+                .setParameter("x", x)
+                .setParameter("y", y);
+        if (excludeId != null) {
+            query.setParameter("excludeId", excludeId);
+        }
+
+        return query.getSingleResult() > 0;
+    }
+
     public Ticket save(Ticket t) {
         if (t.getId() == null) {
             em.persist(t);
@@ -117,7 +148,6 @@ public class TicketRepository {
         );
         if (!predicates.isEmpty()) cq.where(predicates.toArray(new Predicate[0]));
 
-        // сортировка (белый список полей)
         Path<?> sortPath = switch (sort == null ? "id" : sort) {
             case "id" -> root.get("id");
             case "name" -> root.get("name");

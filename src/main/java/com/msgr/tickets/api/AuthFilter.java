@@ -26,7 +26,6 @@ public class AuthFilter implements ContainerRequestFilter {
             path = path.substring(1);
         }
 
-        // Allow all auth endpoints (register/login/logout/me) without prior auth
         if (path.startsWith("auth/") || "auth".equals(path)) {
             return;
         }
