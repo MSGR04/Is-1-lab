@@ -84,6 +84,7 @@ public class TicketService {
 
     @Transactional
     public TicketDto create(TicketUpsertDto in) {
+        enforceSerializableIsolation();
         Ticket t = new Ticket();
         applyUpsert(t, in);
         t.setCreationDate(LocalDate.now());
@@ -96,6 +97,7 @@ public class TicketService {
 
     @Transactional
     public TicketDto update(long id, TicketUpsertDto in) {
+        enforceSerializableIsolation();
         Ticket t = repo.findById(id).orElseThrow(() -> new NotFoundException("ticket not found: " + id));
         applyUpsert(t, in);
         validateUniqueTicketFields(t, id, null, null, null);
@@ -115,6 +117,7 @@ public class TicketService {
 
     @Transactional
     public TicketImportResultDto importCsv(long userId, String csvBody) {
+        enforceSerializableIsolation();
         long operationId = importOperationService.createStarted(userId);
 
         try {
@@ -567,6 +570,7 @@ public class TicketService {
             if (importNames != null && !importNames.add(name)) {
                 throw uniquenessViolation("name", rowNumber);
             }
+            lockUniquenessKey("ticket:name:" + name.trim());
             if (repo.existsByName(name, excludeId)) {
                 throw uniquenessViolation("name", rowNumber);
             }
@@ -578,10 +582,25 @@ public class TicketService {
             if (importCoordinates != null && !importCoordinates.add(coordinatesKey)) {
                 throw uniquenessViolation("coordinates", rowNumber);
             }
+            lockUniquenessKey("ticket:coords:" + coordinatesKey);
             if (repo.existsByCoordinates(coordinates.getX(), coordinates.getY(), excludeId)) {
                 throw uniquenessViolation("coordinates", rowNumber);
             }
         }
+    }
+
+    private void lockUniquenessKey(String key) {
+        if (key == null || key.isBlank()) {
+            return;
+        }
+        em.createNativeQuery("select pg_advisory_xact_lock(hashtext(?1))")
+                .setParameter(1, key)
+                .getSingleResult();
+    }
+
+    private void enforceSerializableIsolation() {
+        em.createNativeQuery("set local transaction isolation level serializable")
+                .executeUpdate();
     }
 
     private String coordinatesKey(Coordinates coordinates) {
