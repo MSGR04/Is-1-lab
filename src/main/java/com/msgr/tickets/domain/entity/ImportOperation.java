@@ -44,6 +44,18 @@ public class ImportOperation {
     @Column(name = "imported_count")
     private Integer importedCount;
 
+    @Column(name = "source_file_name", length = 255)
+    private String sourceFileName;
+
+    @Column(name = "source_file_object_key", length = 512)
+    private String sourceFileObjectKey;
+
+    @Column(name = "source_file_content_type", length = 128)
+    private String sourceFileContentType;
+
+    @Column(name = "source_file_size_bytes")
+    private Long sourceFileSizeBytes;
+
     @NotNull
     @Column(name = "started_at", nullable = false)
     private LocalDateTime startedAt;

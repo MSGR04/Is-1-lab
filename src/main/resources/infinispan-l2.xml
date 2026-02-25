@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan xmlns="urn:infinispan:config:15.0">
+    <cache-container name="tickets-l2-cache" statistics="true">
+        <local-cache name="default">
+            <memory max-count="10000" when-full="REMOVE"/>
+            <expiration max-idle="600000"/>
+        </local-cache>
+    </cache-container>
+</infinispan>

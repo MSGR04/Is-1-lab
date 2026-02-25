@@ -9,6 +9,7 @@
     <persistence-unit name="ticketsPU" transaction-type="JTA">
 
         <jta-data-source>java:jboss/datasources/TicketsDS</jta-data-source>
+        <shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
 
         <properties>
 
@@ -21,6 +22,12 @@
             <property name="hibernate.show_sql" value="true"/>
             <property name="hibernate.format_sql" value="true"/>
             <property name="hibernate.use_sql_comments" value="true"/>
+
+            <property name="hibernate.cache.use_second_level_cache" value="true"/>
+            <property name="hibernate.cache.use_query_cache" value="true"/>
+            <property name="hibernate.cache.region.factory_class" value="infinispan"/>
+            <property name="hibernate.cache.infinispan.cfg" value="infinispan-l2.xml"/>
+            <property name="hibernate.generate_statistics" value="true"/>
 
             <property name="hibernate.transaction.jta.platform"
                       value="org.hibernate.engine.transaction.jta.platform.internal.JBossAppServerJtaPlatform"/>

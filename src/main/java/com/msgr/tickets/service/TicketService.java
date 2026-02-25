@@ -1,5 +1,6 @@
 package com.msgr.tickets.service;
 
+import com.msgr.tickets.cache.LogL2CacheStats;
 import com.msgr.tickets.network.ws.TicketWsEndpoint;
 import com.msgr.tickets.network.ws.TicketWsMessage;
 import com.msgr.tickets.network.dto.PageDto;
@@ -11,6 +12,7 @@ import com.msgr.tickets.domain.embeddable.Address;
 import com.msgr.tickets.domain.embeddable.Coordinates;
 import com.msgr.tickets.domain.embeddable.Location;
 import com.msgr.tickets.domain.entity.Event;
+import com.msgr.tickets.domain.entity.ImportOperation;
 import com.msgr.tickets.domain.entity.Person;
 import com.msgr.tickets.domain.entity.Ticket;
 import com.msgr.tickets.domain.entity.Venue;
@@ -21,11 +23,19 @@ import com.msgr.tickets.domain.enums.TicketType;
 import com.msgr.tickets.domain.enums.VenueType;
 import com.msgr.tickets.network.mapper.CoordinatesMapper;
 import com.msgr.tickets.persistence.TicketRepository;
+import com.msgr.tickets.storage.ImportFileStorageService;
+import com.msgr.tickets.storage.PreparedImportFile;
+import com.msgr.tickets.storage.StoredImportFile;
+import jakarta.annotation.Resource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Status;
+import jakarta.transaction.Synchronization;
 import jakarta.transaction.Transactional;
+import jakarta.transaction.TransactionSynchronizationRegistry;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.BadRequestException;
@@ -39,9 +49,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @ApplicationScoped
 public class TicketService {
+
+    private static final Logger LOG = Logger.getLogger(TicketService.class.getName());
 
     @Inject
     private TicketRepository repo;
@@ -53,15 +69,24 @@ public class TicketService {
     @Inject private VenueService venueService;
     @Inject private Validator validator;
     @Inject private ImportOperationService importOperationService;
+    @Inject private ImportFileStorageService importFileStorageService;
+
+    private final AtomicBoolean failNextImportWithDbError = new AtomicBoolean(false);
+    private final AtomicBoolean failNextImportWithRuntimeError = new AtomicBoolean(false);
+
+    @Resource
+    private TransactionSynchronizationRegistry txSyncRegistry;
 
     @PersistenceContext(unitName = "ticketsPU")
     private EntityManager em;
 
+    @LogL2CacheStats
     public TicketDto get(long id) {
         Ticket t = repo.findById(id).orElseThrow(() -> new NotFoundException("ticket not found: " + id));
         return toDto(t);
     }
 
+    @LogL2CacheStats
     public PageDto<TicketDto> list(
             int page, int size,
             String sort, String order,
@@ -116,13 +141,37 @@ public class TicketService {
     }
 
     @Transactional
-    public TicketImportResultDto importCsv(long userId, String csvBody) {
+    public TicketImportResultDto importCsv(
+            long userId,
+            String sourceFileName,
+            String sourceFileContentType,
+            byte[] fileBody,
+            boolean simulateRuntimeFailure,
+            boolean simulateDbFailure
+    ) {
+        if (fileBody == null || fileBody.length == 0) {
+            throw new BadRequestException("csv file is empty");
+        }
+
+        boolean armedDbFailure = failNextImportWithDbError.getAndSet(false);
+        boolean armedRuntimeFailure = failNextImportWithRuntimeError.getAndSet(false);
+        if (simulateDbFailure || armedDbFailure) {
+            throw new PersistenceException("simulated DB failure before first repository call");
+        }
+
         enforceSerializableIsolation();
         long operationId = importOperationService.createStarted(userId);
+        PreparedImportFile preparedFile = null;
+        boolean synchronizationRegistered = false;
 
         try {
+            preparedFile = importFileStorageService.prepare(operationId, sourceFileName, sourceFileContentType, fileBody);
+            registerImportFileSynchronization(operationId, preparedFile);
+            synchronizationRegistered = true;
+
+            String csvBody = new String(fileBody, StandardCharsets.UTF_8);
             CsvTable csvTable = parseCsv(csvBody);
-            if (csvTable.rows().isEmpty()) {
+            if (csvTable.rows().isEmpty()) {    
                 throw new BadRequestException("csv file has no data rows");
             }
 
@@ -137,17 +186,77 @@ public class TicketService {
             }
 
             em.flush();
-            importOperationService.markSuccess(operationId, csvTable.rows().size());
+
+            importOperationService.markSuccessInCurrentTx(
+                    operationId,
+                    csvTable.rows().size(),
+                    preparedFile.originalFileName(),
+                    preparedFile.finalObjectKey(),
+                    preparedFile.contentType(),
+                    preparedFile.sizeBytes()
+            );
+
+            if (simulateRuntimeFailure || armedRuntimeFailure) {
+                throw new RuntimeException("simulated runtime failure between DB and storage commit");
+            }
+
             TicketWsEndpoint.broadcast(new TicketWsMessage("BULK_CREATED", null));
             return new TicketImportResultDto(csvTable.rows().size());
         } catch (RuntimeException e) {
-            importOperationService.markFailed(operationId);
+            if (!synchronizationRegistered && preparedFile != null) {
+                importFileStorageService.rollbackPrepared(preparedFile);
+            }
+            if (!synchronizationRegistered) {
+                importOperationService.markFailed(operationId);
+            }
             throw e;
         }
     }
 
+    public void armNextImportDbFailure() {
+        failNextImportWithDbError.set(true);
+    }
+
+    public void armNextImportBusinessFailure() {
+        failNextImportWithRuntimeError.set(true);
+    }
+
     public List<TicketImportHistoryDto> listImportHistory(long requesterUserId, String requesterRole) {
         return importOperationService.listHistory(requesterUserId, requesterRole);
+    }
+
+    public ImportFileDownload downloadImportFile(long requesterUserId, String requesterRole, long operationId) {
+        ImportOperation operation = importOperationService.getAllowedForDownload(operationId, requesterUserId, requesterRole);
+        StoredImportFile stored = importFileStorageService.download(
+                operation.getSourceFileObjectKey(),
+                operation.getSourceFileName(),
+                operation.getSourceFileContentType()
+        );
+        return new ImportFileDownload(stored.fileName(), stored.contentType(), stored.bytes());
+    }
+
+    private void registerImportFileSynchronization(long operationId, PreparedImportFile preparedFile) {
+        txSyncRegistry.registerInterposedSynchronization(new Synchronization() {
+            @Override
+            public void beforeCompletion() {
+                importFileStorageService.commitPrepared(preparedFile);
+            }
+
+            @Override
+            public void afterCompletion(int status) {
+                if (status == Status.STATUS_COMMITTED) {
+                    importFileStorageService.cleanupAfterCommit(preparedFile);
+                    return;
+                }
+
+                importFileStorageService.rollbackPrepared(preparedFile);
+                try {
+                    importOperationService.markFailed(operationId);
+                } catch (RuntimeException e) {
+                    LOG.log(Level.WARNING, "failed to mark import operation as failed: " + operationId, e);
+                }
+            }
+        });
     }
 
     private void applyUpsert(Ticket t, TicketUpsertDto in) {
@@ -628,6 +737,8 @@ public class TicketService {
     }
 
     private record CsvTable(List<Map<String, String>> rows) {}
+
+    public record ImportFileDownload(String fileName, String contentType, byte[] bytes) {}
 
     private TicketDto toDto(Ticket t) {
         TicketDto dto = new TicketDto();

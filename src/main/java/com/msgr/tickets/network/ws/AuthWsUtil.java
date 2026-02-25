@@ -1,6 +1,7 @@
 package com.msgr.tickets.network.ws;
 
 import com.msgr.tickets.api.AuthResource;
+import com.msgr.tickets.config.HikariDataSourceProvider;
 import jakarta.websocket.CloseReason;
 import jakarta.websocket.Session;
 
@@ -47,8 +48,7 @@ public final class AuthWsUtil {
 
     private static boolean isTokenValid(String token) {
         try {
-            InitialContext ctx = new InitialContext();
-            DataSource ds = (DataSource) ctx.lookup("java:jboss/datasources/TicketsDS");
+            DataSource ds = resolveDataSource();
 
             try (Connection c = ds.getConnection();
                  PreparedStatement ps = c.prepareStatement(
@@ -63,6 +63,14 @@ public final class AuthWsUtil {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private static DataSource resolveDataSource() throws Exception {
+        if (HikariDataSourceProvider.isEnabled()) {
+            return HikariDataSourceProvider.get();
+        }
+        InitialContext ctx = new InitialContext();
+        return (DataSource) ctx.lookup("java:jboss/datasources/TicketsDS");
     }
 
     private static String extractCookie(String cookieHeader, String key) {

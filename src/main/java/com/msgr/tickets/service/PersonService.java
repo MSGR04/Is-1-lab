@@ -1,4 +1,5 @@
 package com.msgr.tickets.service;
+import com.msgr.tickets.cache.LogL2CacheStats;
 import com.msgr.tickets.network.ws.PersonWsEndpoint;
 import com.msgr.tickets.network.ws.PersonWsMessage;
 import com.msgr.tickets.network.dto.PageDto;
@@ -34,11 +35,13 @@ public class PersonService {
     @Inject
     private PersonMapper mapper;
 
+    @LogL2CacheStats
     public PersonDto get(long id) {
         Person p = repo.findById(id).orElseThrow(() -> new NotFoundException("person not found: " + id));
         return mapper.toDto(p);
     }
 
+    @LogL2CacheStats
     public PageDto<PersonDto> list(
             int page, int size, String sort, String order,
             Long id, Color eyeColor, Color hairColor, String passportID, Country nationality,

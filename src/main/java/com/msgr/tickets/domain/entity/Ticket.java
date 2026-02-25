@@ -15,6 +15,7 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor
 @Entity
+@Cacheable
 @Table(name = "tickets")
 public class Ticket {
 

@@ -186,6 +186,14 @@
             border-color: rgba(239,68,68,.25);
             color: var(--danger);
         }
+        .btn.toggle-on{
+            font-weight:700;
+            border-color:#111827;
+            box-shadow: inset 0 0 0 1px rgba(17,24,39,.5);
+        }
+        .btn.danger.toggle-on{
+            background: rgba(239,68,68,.2);
+        }
 
         .pager{
             display:flex;
@@ -378,6 +386,8 @@
                     <input id="importCsvFile" type="file" accept=".csv,text/csv">
                 </div>
                 <button class="btn dark" id="importCsvBtn" type="button">Import CSV</button>
+                <button class="btn" id="importCsvBizFailBtn" type="button">Buisness Logic Error Simulation</button>
+                <button class="btn danger" id="importCsvDbFailBtn" type="button">DB down</button>
             </div>
             <div class="hint" style="margin-bottom: 10px;">
                 Required CSV columns: name, coordinates.x, coordinates.y, price, type, discount, number,
@@ -394,6 +404,7 @@
                         <th>status</th>
                         <th>user</th>
                         <th>imported count</th>
+                        <th>file</th>
                     </tr>
                     </thead>
                     <tbody id="importHistoryBody"></tbody>
@@ -420,6 +431,15 @@
                 <div class="hint" id="bootstrapAdminMsg" style="margin-top:8px;">
                     Available only when there is no admin in the system.
                 </div>
+            </div>
+
+            <div class="result" id="cacheStatsPanel" style="margin-bottom:12px; display:none;">
+                <h4>L2 cache stats logging</h4>
+                <div class="row">
+                    <button class="btn dark" id="enableCacheStatsBtn" type="button">Enable</button>
+                    <button class="btn" id="disableCacheStatsBtn" type="button">Disable</button>
+                </div>
+                <div class="hint" id="cacheStatsMsg" style="margin-top:8px;"></div>
             </div>
 
             <div class="row">
@@ -726,6 +746,22 @@
         type: '',
         refundable: ''
     };
+    const importSimulationState = {
+        businessError: false,
+        dbDown: false
+    };
+
+    function renderImportSimulationToggles() {
+        const bizBtn = document.getElementById('importCsvBizFailBtn');
+        const dbBtn = document.getElementById('importCsvDbFailBtn');
+        if (!bizBtn || !dbBtn) return;
+
+        bizBtn.textContent = `${importSimulationState.businessError ? '☑' : '☐'} Buisness Logic Error Simulation`;
+        bizBtn.classList.toggle('toggle-on', importSimulationState.businessError);
+
+        dbBtn.textContent = `${importSimulationState.dbDown ? '☑' : '☐'} DB down`;
+        dbBtn.classList.toggle('toggle-on', importSimulationState.dbDown);
+    }
 
     function ctx() {
         const p = location.pathname.split('/');
@@ -787,11 +823,15 @@
         tb.innerHTML = '';
         for (const op of (items || [])) {
             const tr = document.createElement('tr');
+            const download = op.sourceFileAvailable
+                ? `<a href="${ctx()}/api/tickets/import/history/${op.id}/file">${esc(op.sourceFileName || 'download')}</a>`
+                : '';
             tr.innerHTML = `
                 <td>${op.id}</td>
                 <td>${op.status}</td>
                 <td>${op.username}</td>
                 <td>${op.importedCount ?? ''}</td>
+                <td>${download}</td>
             `;
             tb.appendChild(tr);
         }
@@ -818,6 +858,7 @@
         const isAdmin = role === 'ADMIN';
         const adminPanel = document.getElementById('adminGrantPanel');
         const bootstrapPanel = document.getElementById('adminBootstrapPanel');
+        const cachePanel = document.getElementById('cacheStatsPanel');
 
         if (adminPanel) {
             adminPanel.style.display = isAdmin ? 'block' : 'none';
@@ -825,9 +866,15 @@
         if (bootstrapPanel) {
             bootstrapPanel.style.display = isAdmin ? 'none' : 'block';
         }
+        if (cachePanel) {
+            cachePanel.style.display = isAdmin ? 'block' : 'none';
+        }
 
         showAdminMessage('grantAdminMsg', '', false);
         showAdminMessage('bootstrapAdminMsg', 'Available only when there is no admin in the system.', false);
+        if (isAdmin) {
+            refreshCacheStatsState();
+        }
     }
 
     async function grantAdmin(username) {
@@ -849,6 +896,52 @@
         if (!r.ok) throw new Error(txt || `HTTP ${r.status}`);
         return txt ? JSON.parse(txt) : null;
     }
+
+    async function fetchL2CacheLoggingState() {
+        const r = await fetch(`${ctx()}/api/cache/l2/stats-logging`);
+        const txt = await r.text();
+        if (!r.ok) throw new Error(txt || `HTTP ${r.status}`);
+        return txt ? JSON.parse(txt) : null;
+    }
+
+    async function setL2CacheLoggingState(enabled) {
+        const r = await fetch(`${ctx()}/api/cache/l2/stats-logging`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled })
+        });
+        const txt = await r.text();
+        if (!r.ok) throw new Error(txt || `HTTP ${r.status}`);
+        return txt ? JSON.parse(txt) : null;
+    }
+
+    function renderCacheStatsState(state) {
+        const msg = document.getElementById('cacheStatsMsg');
+        if (!msg) return;
+
+        if (!state) {
+            msg.textContent = 'State is unavailable';
+            msg.style.color = 'var(--danger)';
+            return;
+        }
+
+        msg.textContent = `enabled=${state.enabled}, hits=${state.hitCount}, misses=${state.missCount}, puts=${state.putCount}`;
+        msg.style.color = state.enabled ? 'var(--ok)' : 'var(--muted)';
+    }
+
+    async function refreshCacheStatsState() {
+        try {
+            const state = await fetchL2CacheLoggingState();
+            renderCacheStatsState(state);
+        } catch (e) {
+            const msg = document.getElementById('cacheStatsMsg');
+            if (msg) {
+                msg.textContent = 'Failed to load cache stats state';
+                msg.style.color = 'var(--danger)';
+            }
+        }
+    }
+
     function render(pageDto) {
         const tb = document.getElementById('tbody');
         tb.innerHTML = '';
@@ -1064,7 +1157,33 @@
         }
     };
 
-    document.getElementById('importCsvBtn').onclick = async () => {
+    document.getElementById('enableCacheStatsBtn').onclick = async () => {
+        try {
+            const state = await setL2CacheLoggingState(true);
+            renderCacheStatsState(state);
+        } catch (e) {
+            const msg = document.getElementById('cacheStatsMsg');
+            if (msg) {
+                msg.textContent = 'Failed to enable cache stats logging';
+                msg.style.color = 'var(--danger)';
+            }
+        }
+    };
+
+    document.getElementById('disableCacheStatsBtn').onclick = async () => {
+        try {
+            const state = await setL2CacheLoggingState(false);
+            renderCacheStatsState(state);
+        } catch (e) {
+            const msg = document.getElementById('cacheStatsMsg');
+            if (msg) {
+                msg.textContent = 'Failed to disable cache stats logging';
+                msg.style.color = 'var(--danger)';
+            }
+        }
+    };
+
+    async function runCsvImport() {
         const fileInput = document.getElementById('importCsvFile');
         const file = fileInput?.files?.[0];
         if (!file) {
@@ -1075,7 +1194,16 @@
         const formData = new FormData();
         formData.append('file', file, file.name);
 
-        const r = await fetch(`${ctx()}/api/tickets/import/csv`, {
+        const qs = new URLSearchParams();
+        if (importSimulationState.businessError) {
+            qs.set('simulateFailure', 'true');
+        }
+        if (importSimulationState.dbDown) {
+            qs.set('simulateDbFailure', 'true');
+        }
+        const suffix = qs.toString() ? `?${qs.toString()}` : '';
+
+        const r = await fetch(`${ctx()}/api/tickets/import/csv${suffix}`, {
             method: 'POST',
             body: formData
         });
@@ -1103,6 +1231,20 @@
         alert(`Import complete: ${importedCount} ticket(s) created`);
         reload();
         await reloadImportHistory();
+    }
+
+    document.getElementById('importCsvBtn').onclick = async () => {
+        await runCsvImport();
+    };
+
+    document.getElementById('importCsvBizFailBtn').onclick = async () => {
+        importSimulationState.businessError = !importSimulationState.businessError;
+        renderImportSimulationToggles();
+    };
+
+    document.getElementById('importCsvDbFailBtn').onclick = async () => {
+        importSimulationState.dbDown = !importSimulationState.dbDown;
+        renderImportSimulationToggles();
     };
 
     document.getElementById('editForm').onsubmit = async () => {
@@ -1375,6 +1517,7 @@
     };
 
     async function init() {
+        renderImportSimulationToggles();
         const ok = await ensureAuth();
         if (!ok) return;
         setupAdminPanels();

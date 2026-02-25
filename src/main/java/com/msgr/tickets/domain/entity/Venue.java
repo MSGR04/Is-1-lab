@@ -15,6 +15,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
+@Cacheable
 @Table(name = "venues")
 public class Venue {
 

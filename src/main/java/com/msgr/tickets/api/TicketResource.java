@@ -11,6 +11,7 @@ import com.msgr.tickets.service.AuthService;
 import com.msgr.tickets.service.TicketService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.PersistenceException;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.Consumes;
@@ -25,22 +26,27 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.ServiceUnavailableException;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Path("/tickets")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @RequestScoped
 public class TicketResource {
+    private static final Pattern FILENAME_PATTERN = Pattern.compile("filename\\*?=(?:UTF-8''|\\\")?([^\\\";]+)");
 
     @Inject
     private TicketService service;
@@ -100,19 +106,61 @@ public class TicketResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response importCsv(
             @CookieParam(AuthResource.AUTH_COOKIE) String token,
+            @QueryParam("simulateFailure") @DefaultValue("false") boolean simulateFailure,
+            @QueryParam("simulateDbFailure") @DefaultValue("false") boolean simulateDbFailure,
             MultipartFormDataInput formData
     ) {
         AuthUserDto currentUser = currentUser(token);
-        String csvBody = extractCsvBody(formData);
+        UploadedCsvFile file = extractCsvFile(formData);
         try {
-            TicketImportResultDto result = service.importCsv(currentUser.getId(), csvBody);
+            TicketImportResultDto result = service.importCsv(
+                    currentUser.getId(),
+                    file.fileName(),
+                    file.contentType(),
+                    file.body(),
+                    simulateFailure,
+                    simulateDbFailure
+            );
             return Response.status(Response.Status.CREATED).entity(result).build();
         } catch (BadRequestException e) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .type(MediaType.TEXT_PLAIN)
                     .entity(formatImportBadRequestMessage(e.getMessage()))
                     .build();
+        } catch (ServiceUnavailableException e) {
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .type(MediaType.TEXT_PLAIN)
+                    .entity("Minio не запущен")
+                    .build();
+        } catch (RuntimeException e) {
+            if (isSerializationConflict(e)) {
+                return Response.status(Response.Status.CONFLICT)
+                        .type(MediaType.TEXT_PLAIN)
+                        .entity("concurrent transaction conflict, retry import")
+                        .build();
+            }
+            throw e;
         }
+    }
+
+    @POST
+    @Path("/import/csv/simulate/db-down")
+    public Response simulateDbDownForNextImport(
+            @CookieParam(AuthResource.AUTH_COOKIE) String token
+    ) {
+        currentUser(token);
+        service.armNextImportDbFailure();
+        throw new PersistenceException("simulated DB down is armed for next import");
+    }
+
+    @POST
+    @Path("/import/csv/simulate/business-error-next")
+    public Response simulateBusinessErrorForNextImport(
+            @CookieParam(AuthResource.AUTH_COOKIE) String token
+    ) {
+        currentUser(token);
+        service.armNextImportBusinessFailure();
+        return Response.noContent().build();
     }
 
     @GET
@@ -122,6 +170,24 @@ public class TicketResource {
     ) {
         AuthUserDto currentUser = currentUser(token);
         return service.listImportHistory(currentUser.getId(), currentUser.getRole());
+    }
+
+    @GET
+    @Path("/import/history/{operationId}/file")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public Response downloadImportFile(
+            @CookieParam(AuthResource.AUTH_COOKIE) String token,
+            @PathParam("operationId") long operationId
+    ) {
+        AuthUserDto currentUser = currentUser(token);
+        TicketService.ImportFileDownload file = service.downloadImportFile(
+                currentUser.getId(),
+                currentUser.getRole(),
+                operationId
+        );
+        return Response.ok(file.bytes(), file.contentType())
+                .header("Content-Disposition", "attachment; filename=\"" + file.fileName() + "\"")
+                .build();
     }
 
     @PUT
@@ -161,7 +227,34 @@ public class TicketResource {
         return message;
     }
 
-    private String extractCsvBody(MultipartFormDataInput formData) {
+    private boolean isSerializationConflict(Throwable error) {
+        Throwable current = error;
+        int depth = 0;
+        while (current != null && depth < 20) {
+            if (current instanceof SQLException sqlException) {
+                String state = sqlException.getSQLState();
+                if ("40001".equals(state) || "40P01".equals(state)) {
+                    return true;
+                }
+            }
+
+            String message = current.getMessage();
+            if (message != null) {
+                String normalized = message.toLowerCase();
+                if (normalized.contains("could not serialize access")
+                        || normalized.contains("serialization failure")
+                        || normalized.contains("deadlock detected")
+                        || normalized.contains("lock acquisition")) {
+                    return true;
+                }
+            }
+
+            current = current.getCause();
+            depth++;
+        }
+        return false;
+    }
+    private UploadedCsvFile extractCsvFile(MultipartFormDataInput formData) {
         if (formData == null) {
             throw new BadRequestException("multipart/form-data body is required");
         }
@@ -172,10 +265,51 @@ public class TicketResource {
             throw new BadRequestException("multipart field 'file' is required");
         }
 
-        try (InputStream inputStream = fileParts.get(0).getBody(InputStream.class, null)) {
-            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        InputPart filePart = fileParts.get(0);
+        String fileName = extractFileName(filePart);
+        String contentType = filePart.getMediaType() == null
+                ? "text/csv"
+                : filePart.getMediaType().toString();
+
+        try (InputStream inputStream = filePart.getBody(InputStream.class, null)) {
+            return new UploadedCsvFile(fileName, contentType, inputStream.readAllBytes());
         } catch (IOException e) {
             throw new BadRequestException("failed to read uploaded file");
         }
     }
+
+    private String extractFileName(InputPart part) {
+        if (part == null) {
+            return "tickets-import.csv";
+        }
+
+        MultivaluedMap<String, String> headers = part.getHeaders();
+        if (headers == null) {
+            return "tickets-import.csv";
+        }
+
+        List<String> values = headers.get("Content-Disposition");
+        if (values == null || values.isEmpty()) {
+            return "tickets-import.csv";
+        }
+
+        Matcher matcher = FILENAME_PATTERN.matcher(values.get(0));
+        if (!matcher.find()) {
+            return "tickets-import.csv";
+        }
+
+        String candidate = matcher.group(1);
+        if (candidate == null || candidate.isBlank()) {
+            return "tickets-import.csv";
+        }
+
+        String normalized = candidate.replace("\\", "/");
+        int idx = normalized.lastIndexOf('/');
+        return idx >= 0 ? normalized.substring(idx + 1) : normalized;
+    }
+
+    private record UploadedCsvFile(String fileName, String contentType, byte[] body) {
+    }
 }
+
+

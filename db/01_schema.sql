@@ -40,11 +40,16 @@ CREATE TABLE import_operations (
                                    status VARCHAR(32) NOT NULL,
                                    user_id BIGINT NOT NULL,
                                    imported_count INTEGER NULL,
+                                   source_file_name VARCHAR(255) NULL,
+                                   source_file_object_key VARCHAR(512) NULL,
+                                   source_file_content_type VARCHAR(128) NULL,
+                                   source_file_size_bytes BIGINT NULL,
                                    started_at TIMESTAMP NOT NULL,
                                    finished_at TIMESTAMP NULL,
 
                                    CONSTRAINT import_operations_status_values CHECK (status IN ('IN_PROGRESS', 'SUCCESS', 'FAILED')),
                                    CONSTRAINT import_operations_imported_count_positive CHECK (imported_count IS NULL OR imported_count > 0),
+                                   CONSTRAINT import_operations_file_size_positive CHECK (source_file_size_bytes IS NULL OR source_file_size_bytes >= 0),
                                    CONSTRAINT fk_import_operations_user FOREIGN KEY (user_id)
                                        REFERENCES app_users(id) ON DELETE CASCADE
 );

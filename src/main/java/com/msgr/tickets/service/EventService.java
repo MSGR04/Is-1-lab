@@ -1,4 +1,5 @@
 package com.msgr.tickets.service;
+import com.msgr.tickets.cache.LogL2CacheStats;
 import com.msgr.tickets.network.ws.EventWsEndpoint;
 import com.msgr.tickets.network.ws.EventWsMessage;
 
@@ -31,11 +32,13 @@ public class EventService {
     @Inject
     private EventMapper mapper;
 
+    @LogL2CacheStats
     public EventDto get(long id) {
         Event e = repo.findById(id).orElseThrow(() -> new NotFoundException("event not found: " + id));
         return mapper.toDto(e);
     }
 
+    @LogL2CacheStats
     public PageDto<EventDto> list(int page, int size, String sort, String order, Long id, String name, Integer ticketsCount, EventType eventType) {
         long total = repo.count(id, name, ticketsCount, eventType);
         List<EventDto> items = repo.findPage(page, size, sort, order, id, name, ticketsCount, eventType).stream().map(mapper::toDto).toList();

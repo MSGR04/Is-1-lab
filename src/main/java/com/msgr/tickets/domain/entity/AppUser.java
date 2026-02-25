@@ -10,6 +10,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
+@Cacheable
 @Table(name = "app_users")
 public class AppUser {
 

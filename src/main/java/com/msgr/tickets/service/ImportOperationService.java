@@ -9,6 +9,7 @@ import com.msgr.tickets.persistence.ImportOperationRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 
 import java.time.LocalDateTime;
@@ -34,6 +35,10 @@ public class ImportOperationService {
         operation.setUser(user);
         operation.setStatus(ImportOperationStatus.IN_PROGRESS);
         operation.setImportedCount(null);
+        operation.setSourceFileName(null);
+        operation.setSourceFileObjectKey(null);
+        operation.setSourceFileContentType(null);
+        operation.setSourceFileSizeBytes(null);
         operation.setStartedAt(LocalDateTime.now());
         operation.setFinishedAt(null);
 
@@ -41,13 +46,24 @@ public class ImportOperationService {
         return operation.getId();
     }
 
-    @Transactional(Transactional.TxType.REQUIRES_NEW)
-    public void markSuccess(long operationId, int importedCount) {
+    @Transactional(Transactional.TxType.MANDATORY)
+    public void markSuccessInCurrentTx(
+            long operationId,
+            int importedCount,
+            String sourceFileName,
+            String sourceFileObjectKey,
+            String sourceFileContentType,
+            long sourceFileSizeBytes
+    ) {
         ImportOperation operation = repo.findById(operationId)
                 .orElseThrow(() -> new NotFoundException("import operation not found: " + operationId));
 
         operation.setStatus(ImportOperationStatus.SUCCESS);
         operation.setImportedCount(importedCount);
+        operation.setSourceFileName(sourceFileName);
+        operation.setSourceFileObjectKey(sourceFileObjectKey);
+        operation.setSourceFileContentType(sourceFileContentType);
+        operation.setSourceFileSizeBytes(sourceFileSizeBytes);
         operation.setFinishedAt(LocalDateTime.now());
         repo.save(operation);
     }
@@ -61,6 +77,17 @@ public class ImportOperationService {
         operation.setImportedCount(null);
         operation.setFinishedAt(LocalDateTime.now());
         repo.save(operation);
+    }
+
+    public ImportOperation getAllowedForDownload(long operationId, long requesterUserId, String requesterRole) {
+        ImportOperation operation = repo.findById(operationId)
+                .orElseThrow(() -> new NotFoundException("import operation not found: " + operationId));
+
+        boolean isAdmin = requesterRole != null && requesterRole.equalsIgnoreCase("ADMIN");
+        if (!isAdmin && !operation.getUser().getId().equals(requesterUserId)) {
+            throw new ForbiddenException("no access to this import operation");
+        }
+        return operation;
     }
 
     public List<TicketImportHistoryDto> listHistory(long requesterUserId, String requesterRole) {
@@ -83,7 +110,9 @@ public class ImportOperationService {
                 operation.getId(),
                 operation.getStatus().name(),
                 operation.getUser().getUsername(),
-                importedCount
+                importedCount,
+                operation.getSourceFileName(),
+                operation.getSourceFileObjectKey() != null && !operation.getSourceFileObjectKey().isBlank()
         );
     }
 }

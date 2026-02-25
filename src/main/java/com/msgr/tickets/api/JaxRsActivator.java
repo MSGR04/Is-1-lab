@@ -11,6 +11,7 @@ public class JaxRsActivator extends Application {
         return Set.of(
                 AuthResource.class,
                 AuthFilter.class,
+                CacheAdminResource.class,
                 TicketResource.class,
                 EventResource.class,
                 PersonResource.class,

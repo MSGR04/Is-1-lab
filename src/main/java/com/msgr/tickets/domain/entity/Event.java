@@ -13,6 +13,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
+@Cacheable
 @Table(name = "events")
 public class Event {
 

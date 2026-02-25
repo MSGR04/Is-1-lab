@@ -12,4 +12,6 @@ public class TicketImportHistoryDto {
     private String status;
     private String username;
     private Integer importedCount;
+    private String sourceFileName;
+    private boolean sourceFileAvailable;
 }

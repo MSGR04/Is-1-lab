@@ -1,5 +1,6 @@
 package com.msgr.tickets.service;
 
+import com.msgr.tickets.cache.LogL2CacheStats;
 import com.msgr.tickets.network.ws.TicketWsEndpoint;
 import com.msgr.tickets.network.ws.TicketWsMessage;
 import com.msgr.tickets.network.ws.VenueWsEndpoint;
@@ -30,11 +31,13 @@ public class VenueService {
     @Inject
     private VenueMapper mapper;
 
+    @LogL2CacheStats
     public VenueDto get(long id) {
         Venue v = repo.findById(id).orElseThrow(() -> new NotFoundException("venue not found: " + id));
         return mapper.toDto(v);
     }
 
+    @LogL2CacheStats
     public PageDto<VenueDto> list(
             int page, int size, String sort, String order,
             Long id, String name, VenueType type, String zipCode, Integer capacity,
