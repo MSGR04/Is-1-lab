@@ -13,87 +13,6 @@
 ## Задание ЛР1
 
 > Вариант: 409647
-
-Реализовать информационную систему, которая позволяет взаимодействовать с объектами класса Ticket, описание которого приведено ниже:
-
-```java
-public class Ticket {
-    private Long id; //Поле не может быть null, Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
-    private String name; //Поле не может быть null, Строка не может быть пустой
-    private Coordinates coordinates; //Поле не может быть null
-    private java.time.LocalDate creationDate; //Поле не может быть null, Значение этого поля должно генерироваться автоматически
-    private Person person; //Поле не может быть null
-    private Event event; //Поле не может быть null
-    private Integer price; //Поле может быть null, Значение поля должно быть больше 0
-    private TicketType type; //Поле не может быть null
-    private long discount; //Значение поля должно быть больше 0, Максимальное значение поля: 100
-    private Integer number; //Поле может быть null, Значение поля должно быть больше 0
-    private String comment; //Поле не может быть null
-    private boolean refundable;
-    private Venue venue; //Поле может быть null
-}
-public class Coordinates {
-    private Float x; //Поле не может быть null
-    private Long y; //Максимальное значение поля: 593, Поле не может быть null
-}
-public class Person {
-    private Color eyeColor; //Поле может быть null
-    private Color hairColor; //Поле не может быть null
-    private Location location; //Поле может быть null
-    private java.util.Date birthday; //Поле не может быть null
-    private Country nationality; //Поле не может быть null
-}
-public class Event {
-    private Integer id; //Поле не может быть null, Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
-    private String name; //Поле не может быть null, Строка не может быть пустой
-    private java.time.LocalDateTime date; //Поле может быть null
-    private Integer minAge; //Поле не может быть null
-    private String description; //Строка не может быть пустой, Поле не может быть null
-}
-public class Venue {
-    private Long id; //Поле не может быть null, Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
-    private String name; //Поле не может быть null, Строка не может быть пустой
-    private Integer capacity; //Поле может быть null, Значение поля должно быть больше 0
-    private VenueType type; //Поле не может быть null
-    private Address address; //Поле не может быть null
-}
-public class Location {
-    private double x;
-    private Double y; //Поле не может быть null
-    private Integer z; //Поле не может быть null
-}
-public class Address {
-    private String zipCode; //Длина строки должна быть не меньше 9, Поле не может быть null
-}
-public enum TicketType {
-    VIP,
-    USUAL,
-    BUDGETARY,
-    CHEAP;
-}
-public enum Color {
-    RED,
-    BLACK,
-    YELLOW,
-    BROWN;
-}
-public enum Country {
-    RUSSIA,
-    USA,
-    INDIA,
-    SOUTH_KOREA,
-    JAPAN;
-}
-public enum VenueType {
-    PUB,
-    BAR,
-    LOFT,
-    OPEN_AREA,
-    CINEMA;
-}
-```
-Разработанная система должна удовлетворять следующим требованиям:
-
 # Информационная система управления объектами
  
 Веб-приложение для управления объектами предметной области (билеты и связанные сущности)
@@ -126,7 +45,7 @@ public enum VenueType {
 - **Просмотр** объекта по ID — вместе с информацией о всех связанных объектах.
 - **Обновление** атрибутов объекта — в отдельном диалоговом окне.
 - **Удаление** объекта.
-  
+
 > Все операции выполняются на **серверной стороне** (не на клиенте), изменения
 > синхронизируются с базой данных.
  
@@ -244,8 +163,6 @@ public enum VenueType {
 > Эти ограничения реализуются **исключительно на программном уровне** — в рамках
 > бизнес-логики приложения. Они **не должны** быть отражены или продублированы в БД.
 
-Состав новых ограничений согласуется с преподавателем.
-
 ## Нагрузочный сценарий Apache JMeter
 
 Реализуется сценарий, имитирующий **одновременную работу нескольких пользователей**
@@ -288,9 +205,6 @@ public enum VenueType {
 | --- | --- |
 | Реализация | **HikariCP** |
 
-> [!NOTE]
-> В отчёте необходимо описать параметры конфигурации, использованные
-> для настройки пула соединений.
 
 ## L2 JPA Cache
 
@@ -353,6 +267,7 @@ public enum VenueType {
 
 > После окончания демонстрации приложение и **все** запущенные элементы окружения,
 > необходимые для его работы, должны быть остановлены.
+
 ## Как запустить
 
 #### Бэк
