@@ -17,7 +17,55 @@
  
 Веб-приложение для управления объектами предметной области (билеты и связанные сущности)
 с хранением данных в PostgreSQL и синхронизацией состояния между всеми клиентами.
- 
+
+```java
+public class City {
+    private long id; //Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
+    private String name; //Поле не может быть null, Строка не может быть пустой
+    private Coordinates coordinates; //Поле не может быть null
+    private java.util.Date creationDate; //Поле не может быть null, Значение этого поля должно генерироваться автоматически
+    private long area; //Значение поля должно быть больше 0
+    private Integer population; //Значение поля должно быть больше 0, Поле не может быть null
+    private java.time.LocalDate establishmentDate;
+    private Boolean capital; //Поле может быть null
+    private long metersAboveSeaLevel;
+    private Climate climate; //Поле может быть null
+    private Government government; //Поле может быть null
+    private StandardOfLiving standardOfLiving; //Поле может быть null
+    private Human governor; //Поле не может быть null
+}
+public class Coordinates {
+    private double x; //Максимальное значение поля: 904
+    private float y;
+}
+public class Human {
+    private String name; //Поле не может быть null, Строка не может быть пустой
+    private Integer age; //Значение поля должно быть больше 0
+    private float height; //Значение поля должно быть больше 0
+}
+public enum Climate {
+    HUMIDCONTINENTAL,
+    MEDITERRANIAN,
+    STEPPE,
+    SUBARCTIC,
+    TUNDRA;
+}
+public enum Government {
+    GERONTOCRACY,
+    PUPPET_STATE,
+    MATRIARCHY,
+    MONARCHY,
+    JUNTA;
+}
+public enum StandardOfLiving {
+    ULTRA_HIGH,
+    VERY_HIGH,
+    MEDIUM,
+    LOW,
+    VERY_LOW;
+}
+```
+
 ## Содержание
  
 - [Стек технологий](#стек-технологий)
